@@ -1,0 +1,68 @@
+services:
+
+     Amu\Bundle\DecoratorBundle\Service\Decorator:
+        autowire: true
+        autoconfigure: true
+        public: true
+        arguments:
+            - '@service_container'
+            - '@logger'
+            - '@twig'
+        tags:
+            - { name: monolog.logger, handler: amu  }
+
+     decorator_service: '@Amu\Bundle\DecoratorBundle\Service\Decorator'
+
+     Amu\Bundle\DecoratorBundle\Twig\JsonExtension:
+        autowire: true
+        autoconfigure: true
+        public: true
+        arguments:
+            - '@service_container'
+        tags:
+            - { name: "twig.extension" }
+
+     twig.json_decode: '@Amu\Bundle\DecoratorBundle\Twig\JsonExtension'
+
+
+     Amu\Bundle\DecoratorBundle\Twig\MyCustomTwigExtRuntime:
+        autowire: true
+        autoconfigure: true
+        public: true
+        arguments:
+            - '@service_container'
+        tags:
+            - { name: "twig.runtime" }
+
+     twig.json_decode_runtime: '@Amu\Bundle\DecoratorBundle\Twig\MyCustomTwigExtRuntime'
+
+    # BEGIN new Maker tools service définition...
+    Symfony\Bundle\MakerBundle\Doctrine\DoctrineHelper: '@maker.doctrine_helper'
+    Symfony\Bundle\MakerBundle\FileManager: '@maker.file_manager'
+
+    maker.maker.make_translate:
+        class: Amu\Bundle\DecoratorBundle\Maker\MakeTranslate
+        arguments:
+            - '@maker.file_manager'
+            - '@maker.doctrine_helper'
+            - '@maker.generator'
+            - '@service_container'
+        tags: [ "maker.command" ]
+
+    maker.maker.make_decoration:
+          class: Amu\Bundle\DecoratorBundle\Maker\MakeDecoration
+          arguments:
+              - '@maker.file_manager'
+              - '@maker.doctrine_helper'
+              - '@maker.generator'
+              - '@service_container'
+          tags: [ "maker.command" ]
+    # END Maker tools service définition...
+
+#     decorator.ajax_controller:
+#        autowire: true
+#        autoconfigure: true
+#        public: true
+#        class: Amu\Bundle\DecoratorBundle\Controller\ToolsController
+#        arguments:
+#            - $ws: '@decorator.ws_service'

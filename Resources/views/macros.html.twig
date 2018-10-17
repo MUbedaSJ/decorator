@@ -1,0 +1,1810 @@
+{# PREREQUIS:  SF > 2.0 + library CSS & JS : jQuery + BS 3.x + dataTable #}
+
+{# Version du 12/10/2018 resolv bug macro index avec params="yaml"
+
+09/08/2018 ajout de la documentation initSessionIcoCollection,
+13/03/2018 Ajout readonly chk dans addTabForms SSI editable=0
+24/10/2017 resolv bug dans "majTotals{{ label }}(debug)" + tr data-id data-class data-index
+14/12/2016 resolv bug interaction de champs du même nom function majTotals{{ label }}() => préfixage avec label
+24/11/2016 Optimisation & resolv bug latences jQuery addSubFormTab + Totals !!!
+
++ regroupement des virtuals
+
+27/10/2016 resolv bug arDefault init
+
+24/10/2016 addTabForms style th  +text-align: center;vertical-align: middle;
+17/10/2016 + checked default values
++ sur <tr ... class=" .. col_{{ label }}_id_{{ (oneH.vars.value.id)?oneH.vars.value.id:0 }}" >
++ resolv bug libne tfoot vide (cTotal is itérable + |lenght>0)
++  editable=1 si = 0 boutons add + delete masqués
+ add style table-small
+  add td hidden SSI formType avoit champs de type 'hidden' + id class/colonne
+  raw sur le label => personnalisation HTML possible <span title=... class=...  aria-hidden="true"></span> +
+  detection de collection => prototype pour génération des sous formulaire imbriqué
+ #}
+
+
+{#
+
++ initSessionIcoCollection
+crudMacrosLastModifs.html.twig
+
++ récup/maj de TP_RECH + CCF-TEST le 04/09/2018 A TESTER !!!
+
+26/03/2018 + index "array_keys" + class='list-group-item'
+19/03/2018 + index => "popover_click"
+20/04/2017 + noback (edit/new)
+19/10/2017 remove depreciated |replace("A","B") => |replace({"A","B"})
+16/10/2017 filters+type (input type={...}) + optionale values|default(null)
+13/10/2017 + showActionCol (autoHide)+ debut resolv bug Totals sur addTab...
+09/10/2017 resolv bug visu label,errors (new/edit) + reformat genericLdapPersonSearchBS()
+29/09/2017 modif itemator, filters & addLegendeForm & resolv depreciated "_self" => "{% import _self as crudMacro %}" puis {{ crudMacro.macroName(...) }}
+26/09/2017 => SF>=2.8 route index = entityName+"_index" + "v.vars.label" devient "v.vars.name" + suppression de addLegendeForm
+27/02/2017 resolv bug "index" th title=label + add 'aCol.style' => (th) + css td multiples values (array de values)
+24/02/2017 + arFilter => links : href/target
+23/02/2017 macro "index" + popover sur entity/array => realVal|join('<br>') + type="custom" & 'format'= "%..." hex/hexa
+20/02/2017 macro "filtrers" + orga btn dans toolbar
+14/02/2017 macro "filtrers" + class/style + label|raw
+07/02/2016 macro "index" + arActions { target=... title=... } & macro "filter" + { title=...}
+31/01/2017 ul/li dans macro index + bs classe
+19/01/2017 macro "filter" + usage de "_context" => affiche auto stats "Élément's) trouvé(s) : n" + macro "index" : showNbRecords|default(false) + 959 macro "addTabForms" : utilisation des attributs "attr" et "attr_label" du prototype ( FormType )
+22/12/2016 + addTitle + usage dans index...
+21/12/2016 version crudmacros + optimisation des définitions et appel des macros(p1,p2, options[...])
+20/12/2016 + index => compteur de ligne en entête du tableau + paramétrage d'élémént popover +template:'....'
+20/12/2016 + index => compteur de ligne en entête du tableau + paramétrage d'élémént popover +template:'....'
+02/12/2016 + modif addFlashBagViewer automasque alert-dismissible sur timeout(5s)  & dans index => add hightlight "_lastId"
+19/12/2016 mix/adds crudMacros
+28/11/2016 resolv bug sur value type array => realVal|default([])|json_encode
+22/11/2016  + resolv bug si vide pas de bt retour... + verrouillage view x modif possible SPECIFIC PAST-H
+16/11/2016 + resolv bug sur BT popover errors (#840)
+09/11/2016 + edit hide block hidden input x Comments +index => arActions :{ conditions:... }
+02/11/2016 + autoTables sur champs collections + resolv bug label avec espaces dans les appels/defs de fonctions js...
+
+= visuMacros_asf2.html?twig + tabsFormTools2.html.twig 27/10/2016 resolv bug arDefault init
+
++ resolv bug sur value type array => realVal|default([])|json_encode
++ visu index => money => number_Format(...)
++ index format type "datetime" + "time "
+
+20/10/2016 + waitting div sur filters + maj filters + index sans urlBase possible => pas de colone "Actions" +  +  type:'color / color-SIZE ' avec SIZE = un chiffre au choix !
+
+04/10/2016 version ASF 2.0 + addFlashBagViewer() => ajout gestion de l'affichage des flashBag error/danger/info/alert
++ @doc + title + path + params sur les arActions + test: "delete_form is not null" +styling  #}
+{# REQUIS SF > 2.0 + library CSS & JS : jQuery + BS 3.x + dataTable #}
+{% spaceless %}
+    {# theme => 'bootstrap_3_horizontal_layout.html.twig' ou 'bootstrap_3_layout.html.twig' ou autre personalisé #}
+    {# TWIG macro exemple(varA="defaultA",varB="defaultB", ...) => https://github.com/twigphp/Twig/commit/158ed4e88cc336724c9605f5f15a6ef859466703 #}
+    {#
+
+     {%set arItems={
+            'fieldname(key)' : { label:"...", type:['','bool','date','alpha','numeric','formated'], format:'d/m/Y H:ss', formats:{ 0:'<span class="danger">formattage pour valeur 0</span>',0:'<span class="success">formattage pour valeur 1</span>', ...} },
+            'fieldnameB' : { ... },
+            'fieldnameC' : { ... },
+            ...
+            }
+          %}
+    #}
+
+
+    {% macro addLegendeForm() %}
+        <div class="well-sm" style="padding-bottom: 15px;">
+            <div class="pull-right bg-warning ui-corner-all" style="padding: 5px;border: 2px orange solid;">
+                {%set legendeCouleurs="<small><b><span>&Eacute;l&eacute;ments en noir</span> =  &eacute;l&eacute;ments optionnels</br><span class='text-danger'>&Eacute;l&eacute;ments en rouge</span> =  &eacute;l&eacute;ments obligatoires</b></small>" %}
+                <small><a class="ui-button" data-placement="left" data-toggle="popover" data-trigger="hover" data-html="true" title="Légende" data-content="{{legendeCouleurs|nl2br|raw}}"><span class="glyphicon glyphicon-question-sign"></span>&nbsp;<b>L&eacute;gende...</b></a></small>
+            </div>
+            <br>
+        </div>
+    {% endmacro %}
+
+    {% macro addLegende() %}
+        {% set hilightColor='#C7FE74' %}
+        {%set legendeCouleurs="<center><b>L&eacute;gende</b></center><small><font color=blue>&Eacute;l&eacute;ments en bleu</font> =  &eacute;l&eacute;ments optionnels</br><font color=red>&Eacute;l&eacute;ments en rouge</font> =  &eacute;l&eacute;ments obligatoires</br><span style='background-color:"~hilightColor~" ;' >&Eacute;l&eacute;ments sous fond color&eacute; vert</span> =  Mise en surbrillance du dernier &eacute;l&eacute;ment ajout&eacute;/modifi&eacute;</small>" %}
+        <div style="padding-bottom:10px;">
+            <span class="ui-widget-content ui-corner-all" style="padding: 5px;">
+                <small><a class="ui-button jqtip" title="{{legendeCouleurs}}"><span class="glyphicon glyphicon-question-sign"></span>&nbsp;<b>L&eacute;gende...</b></a></small>
+            </span>
+        </div>
+    {% endmacro %}
+
+    {% macro addTitle(title,showNbRecords,nbRecords) %}
+        <div class="text-center center-block">
+            <span class="panel panel-primary h3"  style="padding: 5px 25px;border-width: 2px;">{{ title|default("aucun titre défini...")|raw }} {% if showNbRecords|default(false)!=false %}<span class="badge">{{ nbRecords|default(0) }}</span>{% endif %}</span>
+        </div>
+        <br>
+    {% endmacro %}
+
+    {% macro addFlashBagViewer() %}
+        {% set jsScript="" %}
+        {% set autoCloseTimeout=5000 %}
+        {% for tMsg in ['error','danger','info','success','warning'] %}
+            {% set idRnd="_FlashBagWnd_"~ ("now"|date('U')* random() ) %}
+            {% if app.session.flashBag.has(tMsg) %}
+                <span id="{{ idRnd }}" class="well-sm pull-right" style="z-index: 1;">
+                    <span class="well-sm alert alert-dismissible alert-{{ (tMsg=='error')?'danger':tMsg }}">
+                    <span class=" btn btn-xs glyphicon glyphicon-remove" onclick="$(this).parent().parent().remove();"></span>&nbsp;
+                        {% for msg in app.session.flashBag.get(tMsg) %}
+                            {{ msg|raw }}
+                        {% endfor %}
+                    </span>
+                </span>
+                {% if tMsg in ['success'] %}
+                    {% set jsScript= jsScript~'setTimeout(function(){$("#'~idRnd~'").fadeOut(500,function(){$("#'~idRnd~'").remove();});},'~autoCloseTimeout~');'~"\n" %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        {% if jsScript!="" %}
+            <script language="JavaScript" type="text/javascript">
+                $(function() {
+                    {{ jsScript|raw }}
+                });
+            </script>
+        {% endif %}
+    {% endmacro %}
+
+    {% macro itemator(entities) %}
+        {% set arItemsAll= {} %}
+        {% if (entities|length>0) %}
+            {% if entities[0].getVars is defined %}
+                {% for k,v in entities[0].getVars %}
+                    {% if (attribute(entities[0],k) is defined)  %}
+                        {% set arItemsAll=arItemsAll|merge({ ("%s"|format(k)) : { value: k, label:k|humanize } }) %}
+                    {% endif %}
+                {% endfor %}
+
+                <div class="alert alert-warning"><span class="h3">Mode DEBUG activé via arItems="all", visualisation de l'ensemble des champs possibles et proposition d'un squelete de arItems:</span>
+                    <div class="well well-sm text-primary">{{  "{% set arItems= " }}{{ arItemsAll|json_encode|replace({ "},":"},<br/>&nbsp;&nbsp;&nbsp;&nbsp;",":":": ","}}":"}<br/>}",'{"id"':'{<br/>&nbsp;&nbsp;&nbsp;&nbsp;"id"' })|raw }}<br/>{{ "%}" }} </div>
+                </div>
+            {% else %}
+                <div class="alert alert-danger"><span class="h3">Mode DEBUG activé via arItems="all"</span>
+                    <p>MAIS la visualisation de l'ensemble des champs et la proposition du squelete de arItems: est IMPOSSIBLE car,
+                        <br/><b>il manque dans l'entité la fonction spéciale suivante</b>, qui permet de scruter l'objet entité considéré et de lister ses attributs :
+
+                    <div class="well well-sm text-danger">{{  "    public function getVars()
+        {
+            return get_object_vars($this);
+        }" }}
+                    </div>
+                    </p>
+                </div>
+            {% endif %}
+        {% endif %}
+    {% endmacro %}
+
+    {# Ajouter un barre de filtrage
+
+
+       SAMPLE:
+
+        {% set arFilters={
+                "year":{ label: "Année", values: arYear, selected: selYear|default("all"), class: "" },
+                "promo":{ label: "Promotion", values: arPromo, selected: selPromo|default("all") },
+                "categorie":{ label: "Catégorie",  values: arCategories, selected: selCat|default("all") },
+            }
+        %}
+
+    {{ m.filters(arFilterItems,(app.request.get('_tb_autoFiltering',"off")!="off"),path('route_a_définir'),btSize|default(''),arFilterActions|default([])) }}
+
+
+
+
+    ajouter dans le controller:
+
+
+        $defYear = $request->getSession()->get('curYear', $request->getSession()->get('univYear',date('Y')));
+        $selYear = $request->get('year', $defYear);
+        $request->getSession()->set('curYear', $selYear);
+
+        $defPromo = $request->getSession()->get('curPromo', 'all');
+        $selPromo = $request->get('promo', $defPromo);
+        $request->getSession()->set('curPromo', $selPromo);
+
+//        $selState = $request->get('state', "all");
+//        $request->getSession()->set('curState', $selState);
+
+        $defFil = $request->getSession()->get('curFil', 'all');
+        $selFil = $request->get('filiere', $defFil);
+        $request->getSession()->set('curFil', $selFil);
+
+        $arCriteres=array();
+        $arRespos=array();
+        if(($selYear>0) && ($selYear!="all")){ $arCriteres['year']=$selYear; }
+        if(($selPromo>0) && ($selPromo!="all")){ $arCriteres['promo']=$selPromo; }
+        if(($selFil!="") && ($selFil!="all")) { $arCriteres['filiere']=$selFil; }
+
+        $em = $this->getDoctrine()->getManager();
+
+        if(count($arCriteres)>0){
+            $entities = $em->getRepository('AppBundle:Evaluation')->findBy($arCriteres);
+
+        }else{
+            $entities = $em->getRepository('AppBundle:Evaluation')->findAll();
+        }
+
+        $arYears=$this->get('app.choices')->choiceApoYears("",true);
+        array_unshift($arYears, " - TOUTES -");
+
+        return array(
+            'year'=>$selYear,
+            'promo'=>$selPromo,
+            'filiere'=>$selFil,
+            'arYears'=>$arYears,
+            'arPromos'=>$this->get('app.choices')->choicesPromotions(false,true),
+            'arFilieres'=>$this->get('app.choices')->choicesFilieresMnemo(true),
+            'entities' => $entities,
+        );
+
+
+    #}
+    {% macro filters(arItems,autoFiltering,filterRoute,btSize,arActions,entity) %}
+        {% set btSize=((btSize is defined)?btSize:"xs") %}
+        <form id="_tbFormFilter" action="{{ filterRoute }}" method="get">
+            <table class="table table-bordered table-condensed navbar-default" >
+                <tbody>
+                <tr>
+                    <th></th>
+                    {% for field,filtre in arItems %}
+                        <td class="" style="vertical-align: middle;">
+                            {% if filtre.values|default(null) is iterable %}
+                                <span class="label label-primary">{{ filtre.label|default("Filtre ")|raw  }}</span>&nbsp;
+                                <select class="_tbFilterFormValue small {{ filtre.class|default("") }}" style="{{ filtre.style|default("") }}"  id="{{ field }}" name="{{ field }}" onchange="_tbAutoFiltrer();">
+                                    {% for k,v in filtre.values  %}
+                                        <option {{ (k== filtre.selected|default(""))?"selected":"" }} style="display:block;" value="{{ k }}" title="filter={{ field }}:{{ k }}"><div>&nbsp;{{ v|default("")|raw }}</div></option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <span class="label label-primary">{{ filtre.label|default("Filtre ")|raw   }}</span>&nbsp;
+                                <input type="{{ filtre.type|default("text") }}" {{ (filtre.type|default("text")=='checkbox')?'onclick="this.value=this.checked;"':"" }} class="_tbFilterFormValue {{ filtre.class|default("") }}" style="{{ filtre.style|default("") }}" id="{{ field }}" name="{{ field }}" value="{{ v.value|default(v|default(filtre.value|default(""))) }}" onchange="_tbAutoFiltrer();"/>
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                    <th>
+                        <button id="_tb_bt_manual_filter" title="Filtrer/Rechercher" class="btn btn-{{ btSize }} btn-success glyphicon glyphicon-search" style="{{ autoFiltering?"display:none;":"" }}" onclick="_tbFilterNow();"></button>
+                        <input id="_tb_autoFiltering" name="_tb_autoFiltering" onclick="if(this.checked){$('#_tb_bt_manual_filter').hide();_tbFilterNow();}else{$('#_tb_bt_manual_filter').show();}" {{ autoFiltering?'checked="checked"':'' }} type="checkbox" style="vertical-align:middle;" title="Lancer automatique le filtrage sur changement de la selection de l'un des filtres..."><span  class="glyphicon glyphicon-filter" ></span></input>
+                    </th>
+                    {% if arActions is defined and arActions is iterable and arActions|length>0 %}
+                        <th style="vertical-align: middle;">
+                            <nobr>
+                                {% for a in arActions %}
+                                    {% set showBt=true %}
+                                    {% if a.roles is defined %}
+                                        {% set showBt=false %}
+                                        {% if a.roles is iterable %}
+                                            {% for aRole in a.roles %}
+                                                {% if is_granted(aRole) %}
+                                                    {% set showBt=true %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% elseif a.roles!="" %}
+                                            {% set showBt=is_granted(a.roles) %}
+                                        {% endif %}
+                                    {% endif%}
+                                    {% if showBt==true %}
+                                        {% if a.href is defined %}
+                                            <a class="btn btn-{{ btSize }}  {{ a.class|default("") }}" title="{{ a.title|default("")}}" target="{{ a.target|default("_blank") }}" href="{{ a.href|default("") }}"> {{  a.label|default("")|raw }}</a>&nbsp;
+                                        {% else %}
+                                            <button class="btn btn-{{ btSize }}  {{ a.class|default("") }}" title="{{ a.title|default("")}}" onclick="{{ a.action|default("") }}"> {{  a.label|default("")|raw }}</button>&nbsp;
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </nobr>
+                        </th>
+                    {% endif %}
+                    {% if (entity is defined) and (entity is not null) %}
+                        <th style="vertical-align: middle;">
+                            <span class="text-muted small pull-right">Élément(s) trouvé(s) : <span class="badge">{{ entity|length|default(0) }}</span></span>
+                        </th>
+                    {% endif %}
+                    <th></th>
+                </tr>
+                </tbody>
+            </table>
+        </form>
+        <style>
+            .loader {
+                border: 16px solid #f3f3f3; /* Light grey */
+                border-top: 16px solid #3498db; /* Blue */
+                border-radius: 50%;
+                width: 90px;
+                height: 90px;
+                animation: spin 2s linear infinite;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+        <div id="_filterWaitDiv" class="panel panel-primary " style="border-width:5px;padding:50px; position: fixed;right:40%; bottom:40%;display: none;z-index:999;" >
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-xs-4 "><div class="loader" style="text-align: center;"></div></div>
+                    <div class="col-xs-8 " style="vertical-align: middle ;"><br>Veuillez patienter<br>Chargement en cours...</div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function _tbFilterNow(){ $('#_filterWaitDiv').toggle(); $('#_tbFormFilter').submit(); }
+            function _tbAutoFiltrer(){ if($('#_tb_autoFiltering').attr('checked')){ _tbFilterNow(); } }
+        </script>
+    {% endmacro %}
+
+    {% macro cellFormater(entity,key,aItem,globals,options) %}
+        {% import _self as crudMacro %}
+
+        {% set varName=key %}
+        {% if (aItem['name'] is defined) and (aItem['name']!="") %}
+            {% set varName=aItem['name'] %}
+        {% endif %}
+        {% if (attribute(entity,varName) is defined) and  attribute(entity,varName) is not null %}
+            {% set realVal=attribute(entity,varName) %}
+        {% else %}
+            {% set realVal=null %}
+        {% endif %}
+
+        {% set colVal=realVal %}
+
+        {% if (colVal is not iterable) and (colVal is not null) and (colVal|keys == 0) %}
+            {% set colVal=colVal|nl2br %}
+        {% endif %}
+
+        {% if realVal is null %}
+            {% set colVal = "" %}
+        {% endif %}
+
+        {# Gestion des Formattages spéciaux #}
+        {% if (aItem.type|default("")=="array") and ( (realVal is not null)  and (realVal is iterable) ) %}
+            {% if (aItem.formats is defined) and (aItem.formats is iterable ) and (aItem.formats|length>0) %}
+                {% set colVal = '<span style="display: none;">'~realVal|json_encode|default(0)~'</span><ul class="list-group">'  %}
+                {% for aVal in realVal %}
+                    {% set valFind= ((aItem.formats[aVal] is defined)?aItem.formats[aVal]:"format ?") %}
+                    {% if (valFind is not null) %}
+                        {% set colVal =  colVal~"<li class='list-group-item'>"~valFind|raw|default("")~"</li>" %}
+                    {% else %}
+                        {% set colVal = colVal~"<li class='list-group-item'>"~aVal|raw|default("")~"</li>" %}
+                    {% endif %}
+                {% endfor %}
+                {% set colVal =  colVal~"</ul>" %}
+            {% else %}
+                {% set colVal =" array/formats ?" %}
+            {% endif %}
+
+        {% elseif (aItem.type|default("")=="array_keys") and ( (realVal is not null)  and (realVal is iterable) ) %}
+            {% set colVal = '<span style="display: none;">'~realVal|json_encode|default(0)~'</span><ul class="list-group">'  %}
+            {% for valFind,lib in realVal %}
+                {% if (valFind is not null) %}
+                    {% set colVal =  colVal~"<li class='list-group-item'>"~valFind|raw|default("")~((lib!="")?" - "~lib:"")~ "</li>" %}
+                {% else %}
+                    {% set colVal = colVal~"<li class='list-group-item'>"~aVal|raw|default("")~"</li>" %}
+                {% endif %}
+            {% endfor %}
+            {% set colVal =  colVal~"</ul>" %}
+
+        {% elseif (aItem.type|default("")=="bool") or (aItem.type|default("")=="boolean")  %}
+            {% if realVal is null %}
+                {% set cnvVal = "" %}
+            {% elseif realVal ==  true %}
+                {% set cnvVal = 1 %}
+            {% elseif realVal == false %}
+                {% set cnvVal = 0 %}
+            {% endif %}
+            {% set colVal = '<span style="display: none;">'~realVal|default("")~'</span><center><span class="'~ ((options.bool[cnvVal|default("")].icon|default("")!="")?options.bool[cnvVal|default("")].icon:globals.bool[cnvVal|default("")].icon) ~'" style="font-size:16px;" title="'~ ((options.bool[cnvVal|default("")].text|default("")!="")?options.bool[cnvVal|default("")].text:globals.bool[cnvVal|default("")].text|raw) ~'" ></span></center>' %}
+        {% elseif (aItem.type|default("")=="date") %}
+            {% if realVal is not null %}
+                {% set colVal = '<span style="display: none;">'~realVal|date("U")~'</span>'~ attribute(entity,aItem.value)|date((aItem.format is defined)?aItem.format:globals.dateFormat) %}
+            {% endif %}
+
+        {% elseif (aItem.type|default("")=="datetime") %}
+            {% if realVal is not null %}
+                {% set colVal = '<span style="display: none;">'~realVal|date("U")~'</span>'~ attribute(entity,aItem.value)|date((aItem.format is defined)?aItem.format:globals.datetimeFormat) %}
+            {% endif %}
+
+        {% elseif (aItem.type|default("")=="money") or (aItem.type|default("")=="money2") %}
+            {% if realVal is not null %}
+                {% set colVal = '<span style="display: none;">'~realVal|default(0)~'</span>'~ attribute(entity,aItem.value)|number_format( (aItem.type|default("")=="money2")?2:0 ,',',' ') %}
+            {% endif %}
+
+        {% elseif (aItem.type|default("")=="formated") %}
+            {% if (aItem.formats is defined) and (aItem.formats is iterable ) and (aItem.formats|length>0) %}
+                {% if (aItem.formats[realVal] is defined) %}
+                    {% set colVal = '<span style="display: none;">'~realVal|default(0)~'</span>'~  aItem.formats[realVal]|raw %}
+                {% else %}
+                    {% set colVal = '<span style="display: none;">'~realVal|default(0)~'</span>'~ realVal %}
+                {% endif %}
+            {% else %}
+                {% set colVal =" formats ?" %}
+            {% endif %}
+
+        {% elseif (aItem.type|default("") == "popover") %}
+            {% if  realVal|default("")!=""%}
+                {% set colVal = '<span style="display: none;">1</span><span class="bt-popover '~(options.popover.class|default(globals.popover.class|default('ui-button ui-corner-all'))|raw)~' '~(aItem.icons|default(options.popover.icon|default(globals.popover.icon|default('glyphicon glyphicon-info-sign')))|raw)~'" data-placement="'~( aItem.placement|default(options.popover.placement|default(globals.popover.placement|default('bottom')))|raw )~'" data-html="true" data-trigger="'~( aItem.trigger|default(options.popover.trigger|default(globals.popover.trigger|default('hover')))|raw )~'" data-toggle="popover" data-template="'~( aItem.template|default(options.popover.template|default(globals.popover.template)))|raw|replace({'"':'""'}) ~'" data-title="'~ aItem.label|default(varName|default(aItem.value|default("Informations")))|raw ~'" data-content="'~ realVal|default("")|replace({"'":"''"})|nl2br|raw ~'" ></span>' %}
+            {% else %}
+                {% set colVal = '<span style="display: none;">0</span>' %}
+            {% endif %}
+
+        {% elseif (aItem.type|default("")=="time") %}
+            {% if realVal is not null %}
+                {% set colVal = '<span style="display: none;">'~realVal|date("U")~'</span>'~ attribute(entity,aItem.value)|date((aItem.format is defined)?aItem.format:globals.timeFormat) %}
+            {% endif %}
+
+        {% elseif (aItem.type|default("")=="tip") %}
+            {% if  realVal|default("")!=""%}
+                {% set colVal = '<span style="display: none;">1</span><span class="'~(globals.tip.class|default('ui-button')|raw)~' '~(aItem.icons|default(globals.tip.icon|default('glyphicon glyphicon-question-sign'))|raw)~'" title="'~ realVal|default("") ~'" ></span>' %}
+            {% else %}
+                {% set colVal = '<span style="display: none;">0</span>' %}
+            {% endif %}
+
+        {% elseif (aItem.value is defined) and (aItem.value is iterable) and (aItem.value|length>1) %}
+            {% set containerDataList = '<ul style="list-style: none;margin-left: -45px;">' %}
+            {% for aSub in aItem.value if ((aSub!="") and ("#" not in aSub))   %}
+                {% if (aItem.label is defined) and (aItem.label is iterable) and (aItem.label[aSub] is defined) %}
+                    {% set subLabel = aItem.label[aSub]  %}
+                {% else %}
+                    {% set subLabel = aSub|capitalize %}
+                {% endif %}
+                {% set aSubVal="" %}
+                {% if (attribute(entity,aSub) is defined) %}
+                    {% set realSubVal=attribute(entity,aSub) %}
+                    {% if (attribute(entity,aSub).date is defined) %}
+                        {% set aSubVal = attribute(entity,aSub)|date((arItems[aSub].format is defined)?arItems[aSub].format: globals.dateFormat) %}
+                    {% else %}
+                        {% if (arItems[aSub].type|default("")=="bool") %}
+                            {% set aSubVal = '<span style="display: none;">'~realSubVal|default(0)~'</span><center><span class="'~ globals.bool[realSubVal|default(0)].icon ~'" style="font-size:16px;" title="'~ globals.bool[realSubVal|default(0)].text ~'" ></span></center>' %}
+                        {% elseif ( (realSubVal is not null)  and (realSubVal is iterable) ) %}
+                            {% set colVal = '<span style="display: none;">'~arItems[aSub]|default([])|json_encode~'</span><ul>'  %}
+                            {% for aVal in realSubVal %}
+                                {% set colVal =  colVal~"<li>"~aVal|raw ~"</li>" %}
+                            {% endfor %}
+                            {% set aSubVal =  colVal~"</ul>" %}
+                        {% else %}
+                            {% set aSubVal = realSubVal %}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                {% set containerDataList = containerDataList ~'<li class="text-danger">'~ subLabel|raw ~': <span class="text-primary">'~ aSubVal|raw ~'</span></li>' %}
+            {% endfor %}
+            {% set containerDataList = containerDataList ~'</ul>' %}
+            {% if (aItem.type|default("")=="popover") %}
+                {% if  containerDataList|default("")!='<ul style="list-style: none;margin-left: -45px;"></ul>' %}
+                    <span style="display: none;">1</span><span class="bt-popover {{ options.popover.class|default(globals.popover.class|default( "ui-button ui-corner-all"))|raw }} {{ aItem.icons|default(options.popover.icon|default(globals.popover.icon|default("glyphicon glyphicon-info-sign")))|raw }}" data-placement="{{ aItem.placement|default(options.popover.placement|default(globals.popover.placement|default("bottom")))|raw }}" data-html="true" data-trigger="{{ aItem.trigger|default(options.popover.trigger|default(globals.popover.trigger|default("hover")))|raw }}" data-toggle="popover" data-template="{{ aItem.template|default(options.popover.template|default(globals.popover.template))|raw|replace({'"':'""'}) }} "  data-title="{{ label|raw  }}" data-content='{{ containerDataList|default("")|replace({"'":"&apos;"})|nl2br|raw  }}' ></span>
+                {% else %}
+                    <span style="display: none;">0</span>
+                {% endif %}
+            {% else %}
+                {% set colVal = containerDataList %}
+            {% endif %}
+            {#{% set arValTotals[aItem.value]= arValTotals[aItem.value] + realVal %}#}
+
+        {% elseif ( (realVal is not null)  and (realVal is iterable) ) %}
+            {% set colVal = '<span style="display: none;">'~realVal|default([])|json_encode()~'</span><ul class="list-group" style="list-style: none;">'  %}
+            {% for aVal in realVal %}
+                {% set colVal =  colVal~"<li class='list-group-item well-sm'>"~aVal|default("")~"</li>" %}
+            {% endfor %}
+            {% set colVal =  colVal~"</ul>" %}
+
+        {% else %}
+            {% set colVal = '<span style="display: none;">'~realVal|default(0)~'</span>'~ colVal|default("") %}
+
+        {% endif %}
+
+        <td class="{{ aItem.class|default("") }}" style="vertical-align: middle; text-align:{{ aItem.align|default("left") }};">{% if (aItem.insertBefore|default("")!="")%}{{ aItem.insertBefore|raw }}{% endif %}{% if (aItem.icons|default("")!="") and aItem.type|default("") not in ['tip','popover'] %}<span {% if aItem.iconsTitle|default("")!="" %}title="{{ aItem.iconsTitle|raw  }}"{% endif %} class="{{ (aItem.icons|raw) }}" ></span>{% endif %}{{ colVal|raw }}{% if (aItem.insertAfter|default("")!="")%}{{ aItem.insertAfter|raw }}{% endif %}</td>
+
+    {% endmacro %}
+
+    {# edit Macro d'ajout du formulaire d'édition
+
+        @params string title [OPTIONNEL]Titre de la vue
+        @params object edit_form [OBLIGATOIRE] la class de création/définition du formulaire (FormType)
+        @params object entity [OBLIGATOIRE] la varaible qui contient la source des données
+        @param string  urlBase [OBLIGATOIRE] l'addresse de base qui sera utilisé pour composer les routes d'ajout/edition/maj/visualisation  (_edit, _new, _update)
+        @param array params [OPTIONNEL] tableau de paramètrages des options et items afficher
+           {
+                'items':{ //  => le tableau de formatage des champs (à afficher) },
+                'options':{
+
+                   'new': [true/false], /* (defaut=true) => afficher le bouton d'ajout */
+                   'modif': [true/false], /* (defaut=true) => afficher le bouton de modification */
+                   'delete': [true/false], /* (defaut=true) => afficher le bouton de suppression */
+                   'btSize': "", /* taille des boutons (defaut="") => '', 'xs', 'sm', "lg" (BS btn-xxx SIZING http://getbootstrap.com/components/#btn-groups-sizing) */
+                   'width': "100%", /* (defaut="100%")=> taille de la vue (en % ou px)
+                   'style': "", /* (defaut="bs") => style du rendu en mode tableau ("bs" pour BootStrap, ou "" pour dataTable */
+                   ...
+               }
+        @param bool debug Afficher les informations de debug
+
+         @param string addTitle (option="") => ajouter un titre au formulaire
+         @param string edit_form* => le patron/modèle du formulaire
+         @param string entity* => source des données
+         @param string urlBase* => source des données
+         @btSize (option="") => '', 'xs', 'sm', "lg" (BS btn-xxx SIZING http://getbootstrap.com/components/#btn-groups-sizing)
+         @theme (option=visumacros_defTheme) => 'bootstrap_3_horizontal_layout.html.twig' ou 'bootstrap_3_layout.html.twig' ou autre personalisé http://symfony.com/blog/new-in-symfony-2-6-bootstrap-form-theme
+
+              Notes : labels et formattages des champs sont hérités de la classe du Formulaire :
+                        $bundleName+"/Form/"+$entityName+"Form.php"
+
+    #}
+    {%  macro edit(FQCN,title,entity,params,debug) %}
+        {#old edit(entity,addTitle,edit_form,urlBase,btSize,theme) #}
+        {% import _self as crudMacro %}
+        {% if title|default("")!="" %}
+            {{ crudMacro.addTitle(title) }}
+        {% endif %}
+        {{ crudMacro.addLegendeForm() }}
+        <br>
+        {{ render(controller('DecoratorBundle:Tools:formGenerator', { 'FQCN': FQCN, 'params': params, 'data': entity, 'url':app.request.requestUri, 'debug':debug  } ))|raw   }}
+
+    {% endmacro %}
+
+    {# docmacro view(FQCN,title,entity,params,debug)
+        [MACRO]
+        [DESCRIPTION] Génération de la visualisation d'une entitée / visualisation unitaire
+        @version du 18/09/2018 (options.theme: ['bs','datatable'])
+        @see this::cellFormater() fonction de formattage de champs
+
+        @param string FQCN [OBLIGATOIRE] => le classnName complet de l'entitée
+        @params string title [OPTIONNEL]Titre de la vue
+        @params object entity [OBLIGATOIRE] la varaible qui contient la source des données
+        @param array params [OPTIONNEL] tableau de paramètrages des options et items afficher
+           {
+                'items':{ //  => le tableau de formatage des champs (à afficher) },
+                'options':{
+
+                   'new': [true/false], /* (defaut=true) => afficher le bouton d'ajout */
+                   'modif': [true/false], /* (defaut=true) => afficher le bouton de modification */
+                   'delete': [true/false], /* (defaut=true) => afficher le bouton de suppression */
+                   'btSize': "", /* taille des boutons (defaut="") => '', 'xs', 'sm', "lg" (BS btn-xxx SIZING http://getbootstrap.com/components/#btn-groups-sizing) */
+                   'width': "100%", /* (defaut="100%")=> taille de la vue (en % ou px)
+                   'style': "", /* (defaut="bs") => style du rendu en mode tableau ("bs" pour BootStrap, ou "" pour dataTable */
+                   ...
+               }
+       @param bool debug Afficher les informations de debug
+
+    enddocmacro view(FQCN,title,entity,params,debug) #}
+    {% macro view(FQCN,title,entity,params,debug) %}
+        {% import _self as crudMacro %}
+        {#{% set FQCN=entities|fqcn %}#}
+        {% set urlBase=FQCN|urlBase %}
+
+        {% set globals=render(controller('DecoratorBundle:Tools:globalConfig',{ }))|json %}
+        {% set options=params['options']|default(globals) %}
+        {% set detectedMode="?"%}
+
+        {% if params in ["","auto"] %}
+            {% set detectedMode="auto" %}
+            {% set arItems=render(controller('DecoratorBundle:Tools:autoConfig', { 'FQCN': FQCN, 'debug':debug  } ))|json %}
+        {% elseif params in ["yaml","yml"] %}
+            {% set detectedMode=params %}
+            {% set ymlConfig=render(controller('DecoratorBundle:Tools:yamlConfig', { 'FQCN': FQCN, 'path': '', 'debug':debug  } ))|json %}
+            {% set arItems=ymlConfig['fields']|default([]) %}
+            {% set options=ymlConfig['options']|default(globals) %}
+        {% elseif params is iterable  %}
+            {# Object {... }#}
+            {% set detectedMode="Full-Customizable" %}
+            {% if params['fields'] is defined %}
+                {% set arItems=params['fields']|default([]) %}
+                {% set options=params['options']|default(globals) %}
+            {% else %}
+                {# ['fieldA','fieldB','fieldC',...]   #}
+                {% set options=params['options']|default(globals) %}
+                {% if globals.semiAutomatic|default('auto')=="auto" %}
+                    {% set detectedMode="Semi-Automatic (auto)" %}
+                    {% set autoItems=render(controller('DecoratorBundle:Tools:autoConfig', { 'FQCN': FQCN, 'debug':debug  } ))|json %}
+                {% else %}
+                    {% set detectedMode="Semi-Automatic (yml)" %}
+                    {% set ymlConfig=render(controller('DecoratorBundle:Tools:yamlConfig', { 'FQCN': FQCN, 'path': '', 'debug':debug  } ))|json %}
+                    {% set autoItems=ymlConfig['fields']|default([]) %}
+                    {% set options=ymlConfig['options']|default(options) %}
+                {% endif %}
+                {% set arItems={} %}
+                {%  for f in params if(autoItems[f] is defined) %}
+                    {% set arItems=arItems|merge( { (f): autoItems[f] }) %}
+                {% endfor %}
+            {% endif %}
+        {% endif %}
+
+        {% if debug %}
+            {{ dump("MODE = "~detectedMode~" \n(items,options,globals)",arItems,options,globals) }}
+        {% endif %}
+
+        {#{% set title=options.title|default("") %}#}
+        {% set style=options.style|default(globals.style|default("")) %}
+        {% set btSize=options.btSize|default(globals.btSize|default("")) %}
+        {% set width=options.width|default(globals.width|default("100%")) %}
+
+        {% set new=options.new|default(globals.new|default(true)) %}
+        {% set edit=options.edit|default(globals.edit|default(true)) %}
+        {% set show=options.show|default(globals.show|default(true)) %}
+        {% set delete=options.delete|default(globals.delete|default(true)) %}
+        {% set back=options.back|default(globals.back|default(true)) %}
+        {% set ro=options.ro|default(false) %}
+
+        {% set showEmpty=options.showEmpty|default(globals.showEmpty|default(true)) %}
+
+        {% if title|default("")!="" %}
+            {{ crudMacro.addTitle(title) }}
+        {% endif %}
+
+        {% set toShow=null %}
+        {% if arItems is defined and arItems is not null and  arItems is not iterable %}
+            {% if arItems.name is defined %}
+                {% set toShow={0:arItems} %}
+            {% else %}
+                {% set toShow=null %}
+            {% endif %}
+        {% endif %}
+
+        {%if entity is defined and entity|length>0 %}
+            <div class="center-block" style="width:{{ width|default("100%") }}; ">
+                <table class="{{ (style|default('bs')=='bs')?"table table-bordered table-condensed table-striped table-hover small":"ui-widget-content dataTable"  }} zebra" style="background-color: white;">
+                    <thead ><tr class="ui-widget-header"><th>Champs</th><th>Valeurs</th></tr></thead>
+                    <tbody>
+                    {% for k,cfg in arItems %}
+                        {% set label= (cfg['label'] is defined)?cfg['label']:k %}
+                        {% if (attribute(entity,k) is not null) or showEmpty %}
+                            <tr>
+                                <th>{{ (cfg['label'] is defined)?cfg['label']|raw:k|humanize}} </th>
+                                {% set td_formated=crudMacro.cellFormater(entity,k,cfg,globals,options) %}
+                                {{ td_formated }}
+                                {#<td style="vertical-align: middle;">{{ f|default("")|replace({"\n":"<br>"})|raw   }}</td>#}
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th colspan="2" class="progress-bar-striped bg-info text-center">
+                            {% if back  %}
+                                <a href="{{ path(urlBase~'_index') }}" ><button class="{{ options.buttons.back.class|default( globals.buttons.back.class|default("btn btn-info") )|raw }}  btn-{{ btSize }} pull-left" ><span class="{{ options.buttons.back.icon|default( globals.buttons.back.icon|default("glyphicon glyphicon-arrow-left") )|raw }}"></span> {{ options.buttons.back.text|default( globals.buttons.back.text|default("Retour..") )|raw }}</button></a>
+                            {% endif %}
+                            {% if delete and(entity.id is defined) and (ro==false) %}
+                                <form id="myDelForm" name="myDelForm" method="post" action="{{ path(urlBase~'_delete',{ 'id':entity.id }) }}">
+                                    <input type="hidden" name="_method" value="DELETE">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ entity.id) }}">
+                                    {#<input name="_method" value="DELETE" type="hidden">#}
+                                </form>
+                                {#<span style="display:none;">{{ form(delete_form) }}</span>#}
+                                <button class="{{ options.buttons.delete.class|default( globals.buttons.delete.class|default("btn btn-danger") )|raw }}  btn-{{ btSize }}" onclick="if(confirm('Êtes-vous certain de vouloir supprimer cet enregistrement ?')){ $('#myDelForm').submit(); }"><span class="{{ options.buttons.delete.icon|default( globals.buttons.delete.icon|default("glyphicon glyphicon-trash") )|raw }}"></span> {{ options.buttons.delete.text|default( globals.buttons.delete.text|default("Supprimer") )|raw }}</button>
+                            {% endif %}
+                            {% if new and (ro==false)  %}
+                                <a href="{{ path(urlBase~"_new") }}"><button class="{{ options.buttons.add.class|default( globals.buttons.add.class|default("btn btn-success") )|raw }} btn-{{ btSize }}" ><span class="{{ options.buttons.add.icon|default( globals.buttons.add.icon|default("glyphicon glyphicon-plus") )|raw }}"></span> {{ options.buttons.add.text|default( globals.buttons.add.text|default("Ajouter") )|raw }}</button></a>
+                            {% endif %}
+                            {% if edit and (entity.id is defined) and (ro==false)  %}
+                                <a href="{{ path(urlBase~"_edit",{id: entity.id}) }}" ><button class="{{ options.buttons.edit.class|default( globals.buttons.edit.class|default("btn btn-primary") )|raw }}  btn-{{ btSize }} pull-right" ><span class="{{ options.buttons.edit.icon|default( globals.buttons.edit.icon|default("glyphicon glyphicon-pencil") )|raw }}"></span> {{ options.buttons.edit.text|default( globals.buttons.edit.text|default("Modifier") )|raw }}</button></a>
+                            {% endif %}
+                        </th>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        {% else %}
+            <div class="well-sm">
+                <span class="label label-danger">Aucune donnée définie...</span>
+            </div>
+            <div class="well-sm">
+                {% if back  %}
+                    <a href="{{ path(urlBase~'_index') }}" ><button class="{{ options.buttons.back.class|default( globals.buttons.back.class|default("btn btn-info") )|raw }}  btn-{{ btSize }} pull-left" ><span class="{{ options.buttons.back.icon|default( globals.buttons.back.icon|default("glyphicon glyphicon-arrow-left") )|raw }}"></span> {{ options.buttons.back.text|default( globals.buttons.back.text|default("Retour..") )|raw }}</button></a>
+                {% endif %}
+                {% if delete and(entity.id is defined) and (ro==false) %}
+                    <form id="myDelForm" name="myDelForm" method="post" action="{{ path(urlBase~'_delete',{ 'id':entity.id }) }}">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ entity.id) }}">
+                        {#<input name="_method" value="DELETE" type="hidden">#}
+                    </form>
+                    {#<span style="display:none;">{{ form(delete_form) }}</span>#}
+                    <button class="{{ options.buttons.delete.class|default( globals.buttons.delete.class|default("btn btn-danger") )|raw }}  btn-{{ btSize }}" onclick="if(confirm('Êtes-vous certain de vouloir supprimer cet enregistrement ?')){ $('#myDelForm').submit(); }"><span class="{{ options.buttons.delete.icon|default( globals.buttons.delete.icon|default("glyphicon glyphicon-trash") )|raw }}"></span> {{ options.buttons.delete.text|default( globals.buttons.delete.text|default("Supprimer") )|raw }}</button>
+                {% endif %}
+                {% if new and (ro==false)  %}
+                    <a href="{{ path(urlBase~"_new") }}"><button class="{{ options.buttons.add.class|default( globals.buttons.add.class|default("btn btn-success") )|raw }} btn-{{ btSize }}" ><span class="{{ options.buttons.add.icon|default( globals.buttons.add.icon|default("glyphicon glyphicon-plus") )|raw }}"></span> {{ options.buttons.add.text|default( globals.buttons.add.text|default("Ajouter") )|raw }}</button></a>
+                {% endif %}
+                {% if edit and (entity.id is defined) and (ro==false)  %}
+                    <a href="{{ path(urlBase~"_edit",{id: entity.id}) }}" ><button class="{{ options.buttons.edit.class|default( globals.buttons.edit.class|default("btn btn-primary") )|raw }}  btn-{{ btSize }} pull-right" ><span class="{{ options.buttons.edit.icon|default( globals.buttons.edit.icon|default("glyphicon glyphicon-pencil") )|raw }}"></span> {{ options.buttons.edit.text|default( globals.buttons.edit.text|default("Modifier") )|raw }}</button></a>
+                {% endif %}
+            </div>
+
+        {% endif %}
+
+    {% endmacro %}
+
+
+    {# docmacro index(entities,urlBase,params,debug)
+        [MACRO]
+        [DESCRIPTION] Génération du tableau d'index / visualisation générale
+        @version du 18/09/2018 (options.theme: ['bs','datatable'])
+        @see this::cellFormater() fonction de formattage de champs
+
+        @param string FQCN [OBLIGATOIRE] => le className complet de l'entitée
+        @param string entity [OBLIGATOIRE] => source des données
+        @param string params [OPTIONNEL] (defaut="") type de profil à utiliser parmis ["","auto","yaml","yml"] OU mode full custom => json config : définition des 'fields', leurs formattages et les 'options' personnalisé de visualisation
+        #EXEMPLES D'UTILISATIONS:
+
+        <pre> /* mode "AUTO": detection du paramètrage (via ReflectionClass) et affichage global */
+
+            {{ m.index(students,'student',"App\\Entity\\Student","auto",false) }}
+            // OU
+            {{ m.index(students,'student',"App\\Entity\\Student","",false) }}
+
+        </pre>
+
+        <pre> /* mode "YML": Utilisation de la configuration des champs dans le fichier YAML correspondant "/decorations/$entityName.yml"
+                NOTE : ce fichier peur être générer par la commande "make:decoration {entityName}"
+             */
+
+            {{ m.index(students,'student',"App\\Entity\\Student","yml",false) }}
+
+        </pre>
+
+       <pre> /* mode "Semi-Automatic": liste des champs à afficher dans un tableau ['A','B','C',...] et utilisation des options en auto-détection (via ReflectionClass) */
+
+            {{ m.index(students,'student',"App\\Entity\\Student",['num','name','surname','comments'],false) }}
+
+       <pre> /* mode "Full-Customizable" paramétrage et personnalisation complet des champs et de leurs options */
+
+       {% set params=
+            {
+                fields: {
+                    'fieldname(key)' : {
+                            value: "fieldName",
+                            type: ['', 'alpha','array','array_keys','bool/boolean','date','datetime','formated','money','money2', 'time', 'tips','popover'],
+                            visible: [true/false],
+                            label:"...",
+                            icon="", iconTitle="", iconClass="glyphicon/FontAwesome... classes", [[formattage de l'entête du tableau]]
+                            icons="", iconsTitle="", iconsClass="glyphicon/FontAwesome... classes", [[formattage des lignes/champs]]
+
+                            format:'d/m/Y H:ss', [[format date/heure personnalisé]]
+                            formats:{ 0:'<span class="danger">formattage pour valeur 0</span>',0:'<span class="success">formattage pour valeur 1</span>',...},
+                            ...
+                        },
+                    'fieldnameB' : { ... },
+                    'fieldnameC' : { ... },
+                    ...
+                    },
+
+               options: {
+                    auto (true) => active la génération automatique des items (la config dans "items" surpassera les valeurs "auto")
+                    title (defaut="") => ajouter un titre
+                    style  (defaut="bs") => style du rendu en mode tableau (['bs','datatable'] pour BootStrap ou dataTable)
+                    btSize (defaut="") => '', 'xs', 'sm', "lg" (BS btn-xxx SIZING http://getbootstrap.com/components/#btn-groups-sizing)
+                    width (defaut="100%")=> taille (en % ou px) du rendu en mode tableau
+                    arActions (defaut=[]) => tableau des action personnalisé à rajouter (joker => '{{ entity.id }}' )
+                    new (defaut=true) => afficher le bouton d'ajout (new)
+                    modif (defaut=true) => afficher le bouton de modification (edit)
+                    show (defaut=false) => afficher le bouton de visualisation
+                    delete (defaut=false) => afficher le bouton de suppression
+                    filter (defaut=false) => afficher les filtre sur chaque champs (header)
+                }
+
+            }
+            %}
+
+        {{ m.index(students,'student',"App\\Entity\\Student",params,false) }}
+
+        </pre>
+
+    enddocmacro index(entities,urlBase,params,debug) #}
+    {% macro index(FQCN,title,entities,params,debug) %}
+        {% import _self as crudMacro %}
+        {#{% set FQCN=entities|fqcn %}#}
+        {% set urlBase=FQCN|urlBase %}
+
+        {% set globals=render(controller('DecoratorBundle:Tools:globalConfig',{ }))|json %}
+        {% set options=params['options']|default(globals) %}
+        {% set detectedMode="?"%}
+
+        {% if params in ["","auto"] %}
+            {% set detectedMode="auto" %}
+            {% set arItems=render(controller('DecoratorBundle:Tools:autoConfig', { 'FQCN': FQCN, 'debug':debug  } ))|json %}
+        {% elseif params in ["yaml","yml"] %}
+            {% set detectedMode=params %}
+            {% set ymlConfig=render(controller('DecoratorBundle:Tools:yamlConfig', { 'FQCN': FQCN, 'path': '', 'debug':debug  } ))|json %}
+            {% set arItems=ymlConfig['fields']|default([]) %}
+        {% elseif params is iterable  %}
+            {# Object {... }#}
+            {% set detectedMode="Full-Customizable" %}
+            {% if params['fields'] is defined %}
+                {% set arItems=params['fields']|default([]) %}
+                {% set options=params['options']|default(globals) %}
+            {% else %}
+                {# ['fieldA','fieldB','fieldC',...]   #}
+                {% set options=params['options']|default([]) %}
+                {% if globals.semiAutomatic|default('auto')=="auto" %}
+                    {% set detectedMode="Semi-Automatic (auto)" %}
+                    {% set autoItems=render(controller('DecoratorBundle:Tools:autoConfig', { 'FQCN': FQCN, 'debug':debug  } ))|json %}
+                {% else %}
+                    {% set detectedMode="Semi-Automatic (yml)" %}
+                    {% set ymlConfig=render(controller('DecoratorBundle:Tools:yamlConfig', { 'FQCN': FQCN, 'path': '', 'debug':debug  } ))|json %}
+                    {% set autoItems=ymlConfig['fields']|default([]) %}
+                    {% set options=ymlConfig['options']|default(globals) %}
+                {% endif %}
+                {% set arItems={} %}
+                {%  for f in params if(autoItems[f] is defined) %}
+                    {% set arItems=arItems|merge( { (f): autoItems[f] }) %}
+                {% endfor %}
+            {% endif %}
+        {% endif %}
+
+        {#{% set title=options.title|default("") %}#}
+        {% set style=options.style|default(globals.style|default("")) %}
+        {% set btSize=options.btSize|default(globals.btSize|default("")) %}
+        {% set width=options.width|default(globals.width|default("100%")) %}
+        {% set align=options.align|default(globals.align|default("left")) %}
+        {% set defVisible=options.visible|default(globals.visible|default(false)) %}
+        {% set showNbRecords=options.showNbRecords|default(globals.showNbRecords|default(true)) %}
+        {% set addFilters=options.filter|default(globals.filter|default(false)) %}
+
+        {% set new=options.new|default(globals.new|default(true)) %}
+        {% set edit=options.edit|default(globals.edit|default(true)) %}
+        {% set show=options.show|default(globals.show|default(true)) %}
+        {% set delete=options.delete|default(globals.delete|default(true)) %}
+
+        {% set arActions=options.arActions|default({}) %}
+        {% set arTotals=options.arTotals|default([]) %}
+
+        {% set showActionCol= ((urlBase!="") and (new or edit or show or (delete is not null))) or (arActions is defined and arActions is iterable and arActions|length>0) %}
+
+        {#<div style="padding:25px;background-color: white;">#}
+        <div class="center-block small" style="width:{{ width|default("100%") }}; ">
+            {% if title|default('')!="" %}
+                {{ crudMacro.addTitle(title|raw,showNbRecords,entities|length) }}
+                {{ crudMacro.addFlashBagViewer }}
+            {% endif %}
+
+            {% if debug %}
+                {{ dump("MODE = "~detectedMode~" \n(items,options,globals)",arItems,options,globals) }}
+            {% endif %}
+
+            {% set nbCols=arItems|length + 3 %}
+            {% set arValTotals=[] %}
+            {% if (title|default('')=="") and showNbRecords %}
+                <span class="label label-primary well-sm pull-right" style="margin: 5px;">Élément(s) trouvé(s) : <span class="badge">{{ entities|length }}</span> </span>
+            {% endif %}
+            <table id="idxTable" class="{{ (style=='bs')?"table table-bordered table-striped table-hover":"ui-widget-content datatable dataTable zebra" }}" {{ (options.fixHeader|default(false)==true)?'fixedHeader="true"':''  }} {#sortSelect="true"#} >
+                <thead class="{{ style=='bs'?"bg-info":"ui-state-default" }}">
+                {#{% if titre is defined and titre!="" %}<tr><th colspan="{{ nbCols }}" class="ui-widget-header text-center"><h4>{{ titre }}</h4></th></tr>{% endif %}#}
+                <tr>
+                    {% for label,aCol in arItems if (aCol.visible|default(defVisible)==true) %}
+                        {% set types="alpha" %}
+                        {% set labels= (aCol.label is defined)?aCol.label:label  %}
+                        {% if (aCol.label is defined) and ( aCol.label is iterable)%}
+                            {% set labels ="" %}
+                            {% for aLib in aCol.label if (aLib!="")  %}
+                                {% set labels = labels~ ((labels!="")?" ":"")~aLib %}
+                                {#{% if ((arItems[aSub].type is defined) and (arItems[aSub].type=='date')) %}#}
+                                {#{% set types="numeric" %}#}
+                                {#{% endif %}#}
+                            {% endfor %}
+                        {% endif %}
+                        {% set nameGroup=labels %}
+                        <th class="{{ addFilters?"addTxtFilter":"" }}" style="vertical-align:middle;min-width:{{ aCol.width|default("") }};{{ (style!='bs')?"cursor:pointer;":"" }}{{ aCol.style|default("") }}" label="{{ labels }}" data-sortable-type="{{ types }}" {% if aCol.title|default("")!="" %}title="{{ aCol.title }}"{% endif %}>
+                            <a style="text-decoration: none;">
+                                {% if (aCol.icon|default("")!="") %}
+                                <{{ (style!='bs')?"a":"span" }} {% if aCol.iconTitle|default("")!="" %}title="{{ aCol.iconTitle|raw  }}"{% endif %} class="{{ (aCol.icon|raw) }}" style="padding:0px;{{ (aCol.iconTitle|default("")!="")?"cursor:pointer;":"" }}"></{{ (style!='bs')?"a":"span" }}>
+                            {% endif %}
+                            {{ nameGroup|raw }}
+                            </a>
+                        </th>
+                        {% if (arTotals is defined) and (arTotals is iterable) and (label in arTotals) %}
+                            {% set arValTotals= arValTotals|merge({ (label): 0 }) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if showActionCol %}
+                        <th data-sortable="false" class="no-sortable no-searchable text-center" style="vertical-align:middle;text-align: center;"><a style="text-decoration: none;">Actions</a></th>
+                    {% endif %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for entity in entities %}
+                    <tr id="dataLine_{{entity.id|default(0)}}" >
+                        {% set i=0 %}
+                        {% for label,aCol in arItems if (aCol.visible|default(defVisible)==true) %}
+                            {% set td_formated=crudMacro.cellFormater(entity,label,aCol,globals,options) %}
+                            {{ td_formated }}
+                            {% if (arTotals is defined) and (arTotals is iterable) and (label in arTotals) %}
+                                {% if aCol.type|default("") in ['integer','money','money2','float','decimal'] %}
+                                    {% set arValTotals= arValTotals|merge({ (label): (arValTotals[label]+ attribute(entity,label)) }) %}
+                                {% else %}
+                                    {% set arValTotals= arValTotals|merge({ (label): (arValTotals[label] +1 ) }) %}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if ((entity.id is defined) and showActionCol) %}
+                            <td class="{{ style=='bs'?"text-center":"" }}" style="vertical-align: middle;text-align: center;">
+                                <div class="btn-group clearfix" >
+                                    <nobr>
+                                        {% if (show>0)  %}
+                                            <a href="{{  path(urlBase~"_show", { 'id': entity.id }) }}"><button title="{{ options.buttons.view.text|default( globals.buttons.view.text|default("Visualiser") )|raw }}" class="{{ options.buttons.view.class|default( globals.buttons.view.class|default("btn btn-info") )|raw }} btn-{{ btSize }}" ><span class="{{ options.buttons.view.icon|default( globals.buttons.view.icon|default("glyphicon glyphicon-search") )|raw }}"></span></button></a>
+                                        {% endif %}
+                                        {% if (edit>0) %}
+                                            <a href="{{ path(urlBase~"_edit", { 'id': entity.id }) }}"><button title="{{ options.buttons.edit.text|default( globals.buttons.edit.text|default("Éditer") )|raw }}" class="{{ options.buttons.edit.class|default( globals.buttons.edit.class|default("btn btn-primary") )|raw }} btn-{{ btSize }}" ><span class="{{ options.buttons.edit.icon|default( globals.buttons.edit.icon|default("glyphicon glyphicon-pencil") )|raw }}"></span></button></a>
+                                        {% endif %}
+                                        &nbsp;
+                                        {% if (delete>0) %}
+                                            {% if (delete_form is defined) and (entity.id is defined) %}
+                                                <form id="myDelForm_{{ entity.id }}" name="myDelForm_{{ entity.id }}" method="post" action="{{ path(urlBase~'_delete',{ 'id':entity.id }) }}">
+                                                    {{ form_row(delete_form._token) }}
+                                                    <input name="_method" value="DELETE" type="hidden">
+                                                </form>
+                                                {#<span style="display:none;">{{ form(delete_form) }}</span>#}
+                                                <button class="{{ options.buttons.delete.class|default( globals.buttons.delete.class|default("btn btn-danger") )|raw }} btn-{{ btSize }} " onclick="if(confirm('Êtes-vous certain de vouloir supprimer cet enregistrement ?')){ $('#myDelForm_{{ entity.id }}').submit(); }"><span class="{{ options.buttons.delete.icon|default( globals.buttons.delete.icon|default("glyphicon glyphicon-trash") )|raw }}"></span> {{ options.buttons.delete.text|default( globals.buttons.delete.text|default("Supprimer") )|raw }}</button>
+                                            {% endif %}
+                                            <a href="{{ path(urlBase~"_delete",{'id': entity.id, '_method':'DELETE' }) }}"><button title="{{ options.buttons.delete.text|default( globals.buttons.delete.text|default("Supprimer") )|raw }}" class="{{ options.buttons.delete.class|default( globals.buttons.delete.class|default("btn btn-danger") )|raw }} btn-{{ btSize }}" {# onclick="return(confirm('Etes-vous certain de vouloir supprimer cet enregistrement ?'))"#} ><span class="{{ options.buttons.delete.icon|default( globals.buttons.delete.icon|default("glyphicon glyphicon-trash") )|raw }}"></span></button></a>
+                                        {% endif %}
+                                        {% if arActions is defined and arActions is iterable and arActions|length>0 %}
+                                            <div class="btn-group" >
+                                                {% for a in arActions %}
+                                                    {% set showBt=true %}
+                                                    {% if a.roles is defined %}
+                                                        {% set showBt=false %}
+                                                        {% if a.roles is iterable %}
+                                                            {% for aRole in a.roles %}
+                                                                {% if is_granted(aRole) %}
+                                                                    {% set showBt=true %}
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        {% elseif a.roles!="" %}
+                                                            {% set showBt=is_granted(a.roles) %}
+                                                        {% endif %}
+                                                    {% endif%}
+                                                    {% if showBt==true and (entity.id is defined) %}
+
+                                                        {% if (a.onclick is defined) and (a.onclick!='') and '%id%' in a.onclick %}
+                                                            {% set onclick = a.onclick|replace({"%id%":entity.id}) %}
+                                                        {% else %}
+                                                            {% set onclick = a.onclick|default('') %}
+                                                        {% endif %}
+
+                                                        {% if (a.params is defined) and (a.params|length>0) %}
+                                                            {% set paramsOK=a.params|default([]) %}
+                                                            {% for k,p in a.params %}
+                                                                {#{% if '%id%' in p %}#}
+                                                                {#{%set paramsOK = paramsOK|merge({k:{ k:p|replace({"%id%":entity.id })} }) %}#}
+                                                                {#{%set a.params[k]  =  p|replace({"%id%":entity.id }) %}#}
+                                                                {#{% endif %}#}
+                                                                {#{% if '%' in p %}#}
+                                                                {#{%set paramsOK = paramsOK|merge({k:{ k:p|replace({"%id%":entity.id })} }) %}#}
+                                                                {#{%set a.params[k]  =  p|replace({ p:entity.vars.(p|replace("%":"")).value }) %}#}
+                                                                {#{% endif %}#}
+
+
+                                                            {% endfor %}
+                                                            {%set paramsOK = paramsOK|merge({ 'id':entity.id }) %}
+                                                            {% if entity.crypt|default("")!="" %}
+                                                                {%set paramsOK = paramsOK|merge({ 'crypt':entity.crypt }) %}
+                                                            {% endif %}
+
+                                                        {% else %}
+                                                            {%set paramsOK = { 'id':entity.id } %}
+                                                            {% if entity.crypt|default("")!="" %}
+                                                                {%set paramsOK = paramsOK|merge({ 'crypt':entity.crypt }) %}
+                                                            {% endif %}
+                                                        {% endif %}
+                                                        <a {% if (onclick!='') %} onclick="{{ onclick|raw }}" {% endif %}{% if (a.path is defined) and (a.path!='') %} href="{{ path(a.path,paramsOK) }}" target="{{ a.target|default("") }}" {%endif%}><button class="btn btn-{{ btSize }}  {{ a.class|default("") }}" {% if a.title is defined and a.title!='' %} title="{{ a.title }}" {% endif %}> {{ a.label|default('') }}</button></a>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </nobr>
+                                </div>
+
+                            </td>
+                        {% endif %}
+
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot class="{{ style=='bs'?"bg-info":"ui-state-default" }}" >
+                {% if (arTotals is defined) and (arTotals is iterable) %}
+                    <tr>
+                        {% for label,aCol in arItems if (aCol.visible|default(defVisible)==true) %}
+                            <th class=" {{ aCol.class|default("") }}" style="vertical-align: middle; text-align:{{ aCol.align|default("left") }};">
+                                {% if (arTotals is defined) and (arTotals is iterable) and (label in arTotals) %}
+                                    <div class="label label-info">Total {{ label|raw }} : </div><div class="well-sm text-danger">{% if arValTotals[label] is defined %}{{ arValTotals[label]|default("-")|number_format( (aCol.type|default("")=="money2")?2:0 ,',',' ') }}{% endif %}</div>
+                                {% endif %}
+                            </th>
+                        {% endfor %}
+                        {% if showActionCol  %}<th>&nbsp;</th>{%endif%}
+                    </tr>
+
+                {% endif %}
+                {% if entities|length==0 %}
+                    <tr>
+                        <td colspan="{{ nbCols }}">
+                            <div class="text-center">
+                                <span class="label label-danger">Aucune donnée n'a été trouvée...</span>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+                {% if new %}
+                <tr>
+                    <td colspan="{{ nbCols }}">
+                        <div class="pull-right">
+                            &nbsp;<a href="{{ path(urlBase~"_new") }}" ><button class="{{ options.buttons.add.class|default( globals.buttons.add.class|default("btn btn-success") )|raw }} btn-{{ btSize }}" ><span class="{{ options.buttons.add.icon|default( globals.buttons.add.icon|default("glyphicon glyphicon-plus") )|raw }}"></span> {{ options.buttons.add.text|default( globals.buttons.add.text|default("Ajouter") )|raw }}</button></a>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        {#</div>#}
+    {% endmacro %}
+
+    {# VERSION 27/10/2016 resolv bug arDefault init
+    24/10/2016 addTabForms style th  +text-align: center;vertical-align: middle;
+    17/10/2016 + checked default values
+    + sur <tr ... class=" .. col_{{ label }}_id_{{ (oneH.vars.value.id)?oneH.vars.value.id:0 }}" >
+    + resolv bug libne tfoot vide (cTotal is itérable + |lenght>0)
+    +  editable=1 si = 0 boutons add + delete masqués
+     add style table-small
+      add td hidden SSI formType avoit champs de type 'hidden' + id class/colonne
+      raw sur le label => personnalisation HTML possible <span title=... class=... ></span> +
+      detection de collection => prototype pour génération des sous formulaire imbriqué
+     #}
+
+    {% macro addTabForms(vars_prototype,vars_values,label,handleOnCreate,handleOnDelete,arDefaults,cTotal,tabClass,editable,ErrCounter) %}
+        {% import _self as crudMacro %}
+
+        <style>
+            .table-small > tbody > tr > td { padding:2px;  }
+            .table-small > thead > tr > th { padding:4px;text-align: center;vertical-align: middle;  }
+            .table-small > tfoot > tr > td { padding:2px;  }
+            .table-small > tfoot > tr > th { padding:2px;  }
+        </style>
+        {% set btn_css= (('Sub' in label)?"btn-xs":"btn-sm") %}
+        {#
+        {% set custPrototype="" %}
+        {% for n,oneH in vars_values %}
+        {% set n='__name__' %}
+        {% set baseId=vars_prototype.vars.id %}
+          {% set custPrototype=  '<tr id="colPart_'~label~'_'~n~'">' %}
+            {% for k,v in vars_prototype %}
+              {# children fieldNames # }
+              {% set custPrototype=custPrototype~'<td>'~form_widget(oneH[v.vars.name],{ 'attr':{ 'id': baseId~v.vars.name }  })|replace({"'":"\'"})~'</td>' %}
+            {% endfor %}
+              {% set custPrototype=custPrototype~'<td style="vertical-align:middle;"><span class="btn btn-danger glyphicon glyphicon-remove" onclick="if(confirm(\'Etes-vous certains de vouloir supprimer cette ligne ?\')){ $(\'#colPart_'~label~'_'~n~'\').remove(); };"></span></td>'  %}
+            {% set custPrototype=custPrototype~'</tr>' %}
+        {% endfor %}
+          <pre>
+            <div class="alert-success">MY prototype{{ dump(custPrototype) }}</div>
+            <div class="alert-danger">vars_prototype{{ dump(vars_prototype) }}</div>
+            <div class="alert-warning">form_widget(vars_prototype)|e{{  form_widget(vars_prototype, {  })|e }}</div>
+        </pre>
+
+        #}
+        {% set errCount=0 %}
+        {% set labelCleared=label|default('')|title|replace({' ':''})  %}
+
+        <table id="tabForm{{ labelCleared }}" class="{{ tabClass|default("table table-bordered table-striped table-small") }}" {{ (('Sub' in label)?'style="font-size:0.85em;"':'')|raw }} >
+            <thead>
+            <tr class="{{  ('dataTable' in tabClass|default(""))?"":"bg-primary h4 " }}" {{ (('Sub' in label)?'style="font-size:0.85em;"':'')|raw }} >
+                {% for k,v in vars_prototype %}
+                    <th class="{{ ('hidden' in v.vars.block_prefixes)?"hidden":""  }}{% if v.vars.form.vars.label_attr.class is defined %} {{ v.vars.form.vars.label_attr.class|join(' ')  }}{% endif %}" {% if v.vars.form.vars.label_attr.style|default("")!="" %} style="{{ v.vars.form.vars.label_attr.style|raw }}"{% endif %} >
+                        {#{{  dump(v.vars.attr) }}#}
+                        {#{{  dump(v.vars.form.vars.attr) }}#}
+                        {#{{  dump(v.vars.form.vars.label_attr) }}#}
+                        {{ v.vars.label|default(v.vars.name|humanize)|raw }}{# ({{ k }})#}
+                    </th>
+                {% endfor %}
+                {% if editable|default(1)>0 %}
+                    <th>&nbsp;</th>
+                {% endif %}
+            </tr>
+            </thead>
+
+            {% form_theme vars_values '@Decorator/Form/_amu_form_tab.html.twig' %}
+            {#{% form_theme vars_values 'form_table_layout.html.twig' %}#}
+            <tbody class="tabCollectionContainer_{{ labelCleared }}" data-prototype="{{ form_widget(vars_prototype)|e }}" {{ (('Sub' in label)?'style="font-size:0.85em;"':'')|raw }}>
+
+            {% for n,oneH in vars_values %}
+                <tr id="colPart_{{ labelCleared }}_{{ n }}" class="col_{{ labelCleared }} col_{{ labelCleared }}_id_{{ (oneH.vars.value.id)?oneH.vars.value.id:0 }}" >
+                    {% set id=null %}
+                    {% for k,v in vars_prototype %}
+                        {% if v.vars.name=='id' %}
+                            {% set id=oneH[v.vars.name].vars.value %}
+                        {% endif %}
+                        <td class="center {{ ('hidden' in v.vars.block_prefixes)?"hidden":""  }} {% if v.vars.form.vars.attr.class is defined %} {{ v.vars.form.vars.attr.class|join(' ')  }}{% endif %}" style="vertical-align:middle;{% if v.vars.form.vars.attr.style|default("")!="" %} {{ v.vars.form.vars.attr.style|raw }}"{% endif %}">
+                        {% if 'dataTable' in tabClass|default("") %}
+                            <span class="hidden">{{ oneH[v.vars.name].vars.value|json_encode }}</span>
+                            {% if 'checkbox' in v.vars.block_prefixes  %}
+                                {#checkbox=>  {{ dump(oneH[v.vars.name]) }}#}
+                            {% endif %}
+                        {% endif %}
+                        {% if v.vars.prototype is defined %} {# detection de collection => prototype #}
+                            {#<span data-ref="#subTab{{ label }}_{{ n }}" data-title="{{ v.vars.name|title }}" data-trigger="click" class="bt-popover-ref glyphicon glyphicon-list-alt"></span>#}
+                            {#<span data-ref="#subTab{{ label }}_{{ n }}" data-title="{{ v.vars.name|title }}" data-trigger="click" class="bt-popover-ref2 glyphicon glyphicon-list-alt"></span>#}
+                            {#<span onclick="try{ $('#subTab{{ label }}_{{ n }}').dialog({destroy:true}); }catch(e){} $('#subTab{{ label }}_{{ n }}').dialog();" class="glyphicon glyphicon-list-alt"></span>#}
+                            {#<div class="hidden">#}
+                            {#<div id="subTab{{ label }}_{{ n }}" class="subTab{{ label }}" >#}
+                            {{  crudMacro.addTabForms(oneH[v.vars.name].vars.prototype,oneH[v.vars.name], ("Sub"~n~"_"~v.vars.name|title),"",{},[],"table table-bordered table-striped table-small")  }}
+                            {#</div>#}
+                            {#</div>#}
+                        {% else %}
+                            {{ form_widget(oneH[v.vars.name]) }}{% if form_errors(oneH[v.vars.name])!="" %}{% set errCount=errCount+1 %}<span class="text-danger" style="font-size: x-large;" data-trigger="hover" data-toggle="popover" data-title="Erreur" data-html=true data-content="{{ form_errors(oneH[v.vars.name])|replace({'"':'\"'}) }}"><span class="glyphicon glyphicon-exclamation-sign"></span></span>{% endif %}</td>
+                        {% endif %}
+                    {% endfor %}
+                    {% if editable|default(1)>0 %}
+                        <td class="center col_{{ labelCleared }}_id_{{ id|default("") }}" style="vertical-align:middle;">&nbsp;<span class="btn btn-danger {{ btn_css }} glyphicon glyphicon-remove" onclick="if({{ handleOnDelete|default("confirm('Etes-vous certains de vouloir supprimer cette ligne ?')")|raw }}){ $('#colPart_{{ labelCleared }}_{{ n }}').remove(); _crudMacros_majTotals{{ labelCleared }}(); };"></span>&nbsp;</td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+            {% if (cTotal is defined) and (cTotal is iterable) and(cTotal|length>0) %}
+                <tr class="info">
+                    {% set iCol=1 %}
+                    {% for k,v in vars_prototype %}
+                        {% if (k in cTotal)  %}
+                            <th class="{{ ('hidden' in v.vars.block_prefixes)?"hidden":"text-danger"  }}" id="colTotal_{{ labelCleared }}_{{ k }}" > ... </th>
+                        {% else %}
+                            <th class="{{ ('hidden' in v.vars.block_prefixes)?"hidden":"text-primary center"  }}" >&nbsp;</th>
+                        {% endif %}
+                    {% endfor %}
+                    <th> </th>
+                </tr>
+
+            {% endif %}
+            {% if editable|default(1)>0 %}
+                <tr class="warning"><th colspan="{{ vars_prototype|length +1 }}">&nbsp;<span class="btn {{ btn_css }}  btn-success pull-right" onclick="addSubFormTab{{ labelCleared }}('{{ label|replace({"'":"\'"}) }}'{% if (handleOnCreate is defined) and (handleOnCreate!=null) and (handleOnCreate!="")  %},{{ handleOnCreate }}{% endif %});_crudMacros_majTotals{{ labelCleared }}();"><span class="glyphicon glyphicon-plus pull-left" ></span>&nbsp;Ajouter...</span></th></tr>
+            {% endif %}
+            </tfoot>
+        </table>
+
+        <script language="JavaScript" type="text/javascript">
+            // $(function() {
+            {# Ajout Maj Auto des Totaux via jQuery sur onKeyup #}
+            function _crudMacros_majTotals{{ labelCleared }}(){
+                //alert("_crudMacros_majTotals{{ labelCleared }}");
+                {% if (cTotal is defined) and ((cTotal is iterable) or (cTotal=="*")) %}
+                {% for k,v in vars_prototype if (k in cTotal)%}
+                $('tbody.tabCollectionContainer_{{ label }} tr td input[id$="_{{ k }}"]').each(function (a) {
+                    if($(this).attr("id").toString().indexOf('_{{ labelCleared|lower }}_')>-1){
+                        $(this).bind("keyup change",function () {
+                            var t = 0;
+                            $('input[id$="_{{ k }}"]').each(function (i) {
+                                if($(this).attr("id").toString().indexOf('_{{ labelCleared|lower }}_')>-1){
+                                    try{
+                                        var v=0;
+                                        if( $(this).val()){
+                                            v= $(this).val();
+                                        }
+                                        t+=parseFloat( v );
+                                    }catch (e){
+                                        t+="\n" + $(this).val();
+                                    }
+                                }
+                            });
+                            try{
+                                $("#colTotal_{{ labelCleared }}_{{ k }}").html(t.toFixed(2)).keyup().change();
+                            }catch(e){ }
+                        });
+                    }
+                    $(this).keyup().change();
+                });
+
+                {% endfor %}
+                {% endif %}
+            }
+
+            _crudMacros_majTotals{{ labelCleared }}();
+
+            function addSubFormTab{{ labelCleared }}(colName, onCreateSubFormHandle) {
+                var labelCleared="{{ labelCleared }}";
+                var prototype = $('.tabCollectionContainer_'+labelCleared).attr('data-prototype');
+                var n = $('.tabCollectionContainer_'+labelCleared).children().length;
+                var newForm = prototype.replace(/__name__/g, n );
+                {#
+               var newForm='<tr id="colPart_{{ label }}_'+n+'">{% for k,v in vars_prototype %}<td>{{ form_widget(oneH[v.vars.name]) }}</td>{% endfor %}'+delBt+'</tr>'
+               #}
+                var delBt='<td class="center" style="vertical-align:middle;">&nbsp;<span class="btn {{ btn_css }} btn-danger glyphicon glyphicon-remove" onclick="if(confirm(\'Etes-vous certains de vouloir supprimer cette ligne ?\')){ $(\'#colPart_'+labelCleared+'_'+n+'\').remove(); majTotals{{ labelCleared }}(); };"></span>&nbsp;</td>';
+                newForm=newForm.replace("<tr",'<tr id="colPart_'+labelCleared+'_'+n+'" class="col_'+labelCleared+'" ');
+                newForm=newForm.replace("</tr>",delBt+"</tr>");
+                {% if (arDefaults is defined) and (arDefaults is iterable) and (arDefaults|length>0)%}
+                {% for k,v in arDefaults %}
+                {% if 'checked' in v %}
+                newForm=newForm.replace('['+n+'][{{ k }}]"','['+n+'][{{ k }}]" checked=checked');
+                {% else %}
+                newForm=newForm.replace('['+n+'][{{ k }}]"','['+n+'][{{ k }}]" value={{ v }} ');
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+                $(newForm).appendTo('.tabCollectionContainer_'+labelCleared);
+                {#{% if handleOnCreate is defined %}#}
+                {#{{  handleOnCreate|raw }}#}
+                {#{% endif %}#}
+                if(onCreateSubFormHandle && onCreateSubFormHandle!=""){
+                    onCreateSubFormHandle();
+                }
+                try{ ihm.initAll(); }catch (e){}
+                try{ majTotals{{ labelCleared }}();}catch (e){}
+                $('input.active:disabled').removeClass('ui-state-disabled'); //.css('color','black');
+                //    $('.table-condensed2 > tfoot > tr > td,.table-condensed2 > tfoot > tr > th,.table-condensed2 > thead > tr > td,.table-condensed2 > thead > tr > th').css('padding','0px');
+            }
+
+            try{ majTotals{{ labelCleared }}(); }catch (e){}
+            try{ ihm.initAll(); }catch (e){}
+            {% if (errCount|default(0)>0) and (ErrCounter is defined) and (ErrCounter!="") %}
+            $('#{{ ErrCounter }}').html("</br>&nbsp;<span class='text-danger'>Il y a {{ errCount }} erreur(s)...<span>");
+            {% endif %}
+
+            {% if 'dataTable' in tabClass|default("") %}
+            ihm.initAll();
+            {% endif %}
+            // });
+        </script>
+
+    {% endmacro addTabForms %}
+
+    {% macro addJSTools() %}
+        <script language="JavaScript" type="text/javascript">
+            $(function() {
+
+                function genericConvertULVisuToAccordion(ULcls,title,varHeadInfos) {
+                    var $lb = $("." + ULcls).find("div.amuFormsLabel label:first");
+                    var n = 1;
+                    if($lb !== undefined)
+                        try{
+                            parseInt($lb.html()) + 1;
+                            if ($lb.html().match(/\d/)) {// Si le html du 1ier est un Chiffre Alors on l'enlève
+                                $lb.remove();
+                            }
+                        }catch(e){}
+
+                    if (n > 0) {
+                        var idLnk = $(this).find("table").attr("id") + "_" + (varHeadInfos ? varHeadInfos : "_lnk_");
+                        $(this).html("<div class='subFormAcc'><h3 >" + title + " N°" + n + ' : <span link="' + idLnk + '" >' + $("#" + idLnk).val() + "</span></h3><div class='_subFormContainer'>" + $(this).html() + "</div></div>");
+                        if (varHeadInfos) {
+                            $('#' + idLnk).change(function () {
+                                $('span[link="' + idLnk + '"]').html($(this).val());
+                            });
+                            $('#' + idLnk).keyup(function () {
+                                $('span[link="' + idLnk + '"]').html($(this).val());
+                            });
+                        }
+                    }
+                }
+
+                /**
+                 * Ajout d'un control jQuery auto-complétion de listing des individus issu du LDAP (student,personnel...)
+                 *
+                 * @param {string} idListing l'id du control de saisie
+                 * @param {array} tableau de liens entre les valeurs de retours et les champs (id) du formulaire : array("idControl_a_mettre_a_jour" => "ldap.item.value", ...)
+                 * @returns {null} */
+                function genericLdapPersonSearchOld(idListing,arLinks){
+
+                    function normJSON(str){ if(str===null){ return("?"); }else{ return(str.toString().replace(/'/g,"&apos;")).replace(/,/g,", "); } }
+
+                    function getTips(item){
+                        var tips="";
+                        if(item)
+                            if(item.edupersonprimaryaffiliation!=""){
+                                tips +="<center><b>Type de personnel :</b> "+ item.edupersonprimaryaffiliation+'</center>';
+                                switch(item.edupersonprimaryaffiliation){
+                                    case "student":
+                                        tips +="</br> <b>Code &eacute;tudiant :</b> "+ item.supannetuid;
+                                        tips +="</br> <b>Dilpl&ocirc;me :</b> "+ item.supannetudiplome;
+                                        tips +="</br> <b>&Eacute;pape :</b> "+ item.supannetuetape;
+                                        tips +="</br> <b>Ann&eacute;e d&apos;inscription :</b> "+ item.supannanneeinscription;
+                                        break;
+                                    case "faculty":
+                                    case "employee":
+                                    case "researcher":
+                                        tips +="</br> <b>Code personnel:</b> "+ item.supannempid;
+                                        break;
+                                }
+                            }
+                        //if(item.supannaffectation!=null) tips +="</br> <b>Affectation :</b> </br>&nbsp;&nbsp;- "+ normJSON(item.supannaffectation).replace(/,/g,"</br>&nbsp;&nbsp;- ");
+                        //else
+                        tips +="</br> <b>Affectation(s) :</b> "+ normJSON(item.supannentiteaffectation);
+                        tips +="</br> <b>Affectation principale :</b> "+ normJSON(item.supannentiteaffectationprincipale);
+                        tips +="</br> <b>Établissement :</b> " + normJSON(item.supannetablissement);
+                        tips += "<hr> <b>Campus :</b> " + normJSON(item.amucampus) +
+                            "</br> <b>Site :</b> " + normJSON(item.amusite) +
+                            "</br> <b>Composante :</b> " + normJSON(item.amucomposante);
+                        return(tips);
+                    }
+
+                    function getIco2(af){
+                        var ico="{{ asset("bundles/app/images/ico/16/vide.png") }}";
+                        if(af!=null){
+                            if(af!="")
+                                switch(af){
+                                    case "MED": ico="{{ asset("bundles/app/images/ico/16/surgeon.png") }}"; break;
+                                    case "MEX": ico="{{ asset("bundles/app/images/ico/16/doctor-white.png") }}"; break;
+                                    case "ODO": ico="{{ asset("bundles/app/images/ico/16/med-tooth.png") }}"; break;
+                                    case "PHA": ico="{{ asset("bundles/app/images/ico/16/med-pharmacy.png") }}"; break;
+                                    case "ESF": ico="{{ asset("bundles/app/images/ico/16/doctor-white.png") }}"; break;
+                                        {#
+                                       /* case "G0":
+                                        case "P0":
+                                        case "T0": ico="{{ asset("bundles/app/images/ico/16/company.png") }}";break;*/ #}
+                                    case 'POL': ico="{{ asset("bundles/app/images/ico/16/stats-trace.png") }}";break;
+                                    case 'IUT':
+                                    case 'IAX':
+                                    case 'IDI':
+                                    case '40':  ico="{{ asset("bundles/app/images/ico/16/light2.png") }}";break;
+                                    // bundles/app/images/ico/16/molecule.png
+                                    case 'STM': ico="{{ asset("bundles/app/images/ico/16/stickman-run.png") }}";break;
+                                        {# /*case 'D0':
+                                        case 'D1':
+                                        case 'D2': ico="{{ asset("bundles/app/images/ico/16/justice-balance.png") }}";break;*/ #}
+                                    case 'JOU': ico="{{ asset("bundles/app/images/ico/16/information.png") }}";break;
+                                    case 'ESP': ico="{{ asset("bundles/app/images/ico/16/certif-2.png") }}";break;
+                                    case 'LSH':ico="{{ asset("bundles/app/images/ico/16/books.png") }}";break;
+                                    default:
+                                        switch(af.toString().substr(0,2)){
+                                            case 'JO': ico="{{ asset("bundles/app/images/ico/16/information.png") }}";break;
+                                            case 'LS':/* LSH*/ ico="{{ asset("bundles/app/images/ico/16/books.png") }}";break;
+                                            case 'SC': ico="{{ asset("bundles/app/images/ico/16/labo-science.png") }}";break;
+                                            case 'EG': ico="{{ asset("bundles/app/images/ico/16/eco-finance-money-euro.png") }}";break;
+                                            case 'PO': ico="{{ asset("bundles/app/images/ico/16/stats-trace.png") }}";break;
+                                            case 'ES': ico="{{ asset("bundles/app/images/ico/16/certif-2.png") }}";break;
+                                            default:
+                                                if(af.toString().length===2)
+                                                    switch(af.toString().substr(0,1)){
+                                                        case 'F': ico="{{ asset("bundles/app/images/ico/16/spellcheck.png") }}";break;
+                                                        case 'D': ico="{{ asset("bundles/app/images/ico/16/justice-balance.png") }}";break;
+                                                        case 'G':
+                                                        case 'P':
+                                                        case 'T': ico="{{ asset("bundles/app/images/ico/16/company.png") }}";break;
+                                                    }
+                                        }
+                                }
+                        }
+                        return(ico);
+                    }
+
+                    function getIco(pa){
+                        var ico="{{ asset("bundles/app/images/ico/16/unknow.png") }}";
+                        if(pa!=null){
+                            if(pa!="")
+                                switch(pa){
+                                    case "faculty":  ico="{{ asset("bundles/app/images/ico/16/faculty.png") }}"; break;
+                                    case "student":  ico="{{ asset("bundles/app/images/ico/16/student-2.png") }}"; break;
+                                    case "employee": ico="{{ asset("bundles/app/images/ico/16/amu.png") }}";break;
+                                    case "researcher": ico="{{ asset("bundles/app/images/ico/16/cnrs.png") }}";break;
+                                    case 'member': ico="{{ asset("bundles/app/images/ico/16/unknow.png") }}";break;
+                                }
+                        }
+                        return(ico);
+                    }
+
+                    if(idListing){
+                        $("#"+idListing).autocomplete({ minLength:2,delay:0,source:"{{ path("ajxLdapPersonnelsList") }}",
+                            create: function() {
+                                $(this).data('ui-autocomplete')._renderItem = function( ul, item ) {
+                                    $(ul).css({ "max-height": "250px", "overflow-y":"auto" , "overflow-x": "hidden" });
+                                    return $( "<li>" )
+                                        .attr( "data-value", item.value )
+                                        .append( $( "<a class='TabInfos cluetip' title='Informations sur cette personne...|<small>"+ getTips(item)+"</small>' ><nobr>" + "<img align='absmiddle' src='"+ getIco(item.edupersonprimaryaffiliation)+"' /><img align='absmiddle' src='"+ getIco2(item.supannentiteaffectationprincipale)+"' />&nbsp;" + item.cn + " <b>(P"+ normJSON(item.amuperimetre) +")</b>" + "</nobr></a>" ) )
+                                        .appendTo( ul );
+                                };
+                            },
+                            focus:function(event,ui){ /* $("#amu_pacbobundle_admins_login").val(ui.item.value); $("#amu_pacbobundle_admins_infos").val(ui.item.label);*/  },
+                            open:function(event,ui){ try { ihm.initTips(); }catch (e){ } },
+                            //search: function( event, ui ) { /*$("#_dbgListingPers_wait").show();*/ },
+                            //response: function( event, ui ) { /*$("#_dbgListingPers_wait").hide();*/ },
+                            select:function(event,ui){
+                                if(arLinks){
+                                    for(var fld in arLinks){
+                                        try {
+                                            if(ui.item[fld]){ $("#"+arLinks[fld]).val(ui.item[fld]); }
+                                        }catch (e){ }
+                                    }
+                                }
+                                return false;
+                            }
+                        });
+                    }
+                }
+
+                /**
+                 * Ajout d'un control jQuery auto-complétion de listing des individus issu du LDAP (student,personnel...)
+                 *
+                 * @param {string} idListing l'id du control de saisie
+                 * @param {array} tableau de liens entre les valeurs de retours et les champs (id) du formulaire : array("idControl_a_mettre_a_jour" => "ldap.item.value", ...)
+                 * @returns {null} */
+                function genericLdapPersonSearchBS(idListing,arLinks){
+                    if($('#'+idListing)){
+                        try { $('#'+idListing ).autocomplete("destroy"); } catch(e){}
+                        $('#'+idListing).autocomplete(
+                            { source: "{{ path('ajxLdapPersonnesList',{ 'filter':'(|(eduPersonPrimaryAffiliation=employee)(eduPersonPrimaryAffiliation=member)(eduPersonPrimaryAffiliation=faculty))'}) }}",
+                                minLength: 2,
+                                select: function( event, ui ) {
+                                    if(arLinks){
+                                        for(var fld in arLinks){
+                                            try {
+                                                if(ui.item[fld]){ $("#"+arLinks[fld]).val(ui.item[fld]); }
+                                            }catch (e){
+                                                alert("tabsFormTools Error => "+fld+" non trouvé...")
+                                            }
+                                        }
+                                    }
+                                    return false; //$('#'+idListing).val("");
+                                }
+                            }).autocomplete( "instance" )._renderItem = function( ul, item ) {
+
+                            var ti= {
+                                'faculty':'<span class="glyphicon glyphicon-blackboard"></span>',
+                                'employee':'<span class="glyphicon glyphicon-briefcase"></span>',
+                                'student':'<span class="glyphicon glyphicon-education"></span>',
+                                'researcher':'<span class="glyphicon glyphicon-glyphicon glyphicon-globe"></span>',
+                                'alum':'<span class="glyphicon glyphicon-star-empty"></span>',
+                                '':'<span class="glyphicon glyphicon-question-sign"></span>',
+                            };
+                            var tl= {
+                                'faculty':'<span class="text-primary">Enseignant</span>',
+                                'employee':'<span class="text-success">Personnel</span>',
+                                'student':'<span class="text-warning">Étudiant</span>',
+                                'researcher':'<span class="text-danger">Chercheur</span>',
+                                'alum':'<span class="text-danger">Ancien étudiant</span>',
+                                '':'Inconnue',
+                            };
+                            var t2= {
+                                'faculty':'<span class="glyphicon glyphicon-blackboard"></span>&nbsp;Enseignant',
+                                'employee':'<span class="glyphicon glyphicon-briefcase"></span>&nbsp;Personnel',
+                                'student':'<span class="glyphicon glyphicon-education"></span>&nbsp;Étudiant',
+                                'researcher':'<span class="glyphicon glyphicon-glyphicon glyphicon-globe"></span>&nbsp;Chercheur',
+                                'alum':'<span class="glyphicon glyphicon-star-empty"></span>&nbsp;Ancien étudiant',
+                                '':'<span class="glyphicon glyphicon-question-sign"></span>&nbsp;Inconnue',
+                            };
+                            var a=item.edupersonprimaryaffiliation;
+                            var ico=(ti[a] !== undefined)?ti[a]:'<span class="glyphicon glyphicon-question-sign"></span>';
+                            var txt=(tl[a] !== undefined)?tl[a]:'Inconnue';
+                            return $( "<li>" )
+                                .append( "<div>" + ico + " " + item.supanncivilite + " " + item.label + "  :  " + txt + ((item.amucomposante!="")?", à <b>"+ item.amucomposante.toString().toUpperCase() + "</b>":"") +   "</div>" )
+                                .appendTo( ul );
+
+                        };
+                    }
+                }
+            });
+        </script>
+
+    {% endmacro addJSTools %}
+
+
+    {# docmacro initSessionIcoCollection(icoColName,sessionVarName,debug)
+        [MACRO]
+        [DESCRIPTION] Initialise en session (dans 'sessionVarName') un tableau d'icônes à partir d'une collection 'icoColName' donnée
+        @param string icoColName [OPTIONNEL] le nom de la collection/librairie à utiliser (["fontAwesome","glyphicons",""]par defaut : "" => "fontAwesome")
+        @param string sessionVarName [OPTIONNEL] le nom de la variable de session qui contiendra les valeurs (par defaut : "" => "icoCollection")
+        @param bool debug pour afficher [OPTIONNEL] le mode débug (listing des icônes de la collection choisie (defaut:"" => false)
+        #EXEMPLE de récupération d'une icône après appel de la macro initSessionIcoCollection(...):
+        <pre>
+            {{ '{% import "ApogeeBundle::macros.html.twig" as m %}
+            {{ m.initSessionIcoCollection('','apo_myIcons') }}
+            {% set myIcons=app.session.get('apo_myIcons',{}) %}
+            {% if myIcons.library|default("")!="" %}
+                {{ myIcons.library|raw }}
+                permet d'inclure le fichier css de définition...
+            {% endif %}
+            {{ myIcons.student|raw }} OU {{ myIcons['student']|raw }}
+        </pre>
+    enddocmacro initSessionIcoCollection(icoColName,sessionVarName,debug) #}
+    {% macro initSessionIcoCollection(icoColName,sessionVarName,debug) %}
+        {% if (icoColName|default("")=="") %}{% set icoColName='fontAwesome' %}{% endif %}
+        {% if (sessionVarName|default("")=="") %}{% set sessionVarName='icoCollection' %}{% endif %}
+        {% if debug is null %}{% set debug=false %}{% endif %}
+        {#
+            'med2': '<i class="fas fa-hospital"></i>',
+            'pha2': '<i class="fas fa-briefcase-medical"></i>',
+            'ventes2': '<i class="fas fa-shopping-basket"></i>',
+            'sciences2': '<i class="fas fa-atom"></i>',
+
+        #}
+        {% set iconsCollections={
+
+            'fontAwesome': {
+
+                'library': '<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">',
+
+                'error': '<i class="fas fa-exclamation-triangle"></i>',
+                'wait': '<i class="fa fa-spinner fa-spin" style="font-size:24px"></i>',
+                'student': '<i class="fas fa-graduation-cap"></i>',
+                'default': '<i class="fas fa-university"></i>',
+                'research': '<i class="fas fa-microscope"></i>',
+
+                'sciences': '<i class="fab fa-react"></i>',
+                'chimie': '<i class="fas fa-flask"></i>',
+                'info': '<i class="fas fa-laptop-code"></i>',
+                'math': '<i class="fas fa-drafting-compass"></i>',
+
+                'pol': '<i class="fa fa-sitemap"></i>',
+                'pol': '<i class="fas fa-award"></i>',
+                'eco':'<i class="fas fa-chart-line"></i>',
+
+                'drt':'<i class="fa fa-balance-scale"></i>',
+
+                'sport': '<i class="fas fa-walking"></i>',
+                'letter': '<i class="fas fa-book"></i>',
+                'arts': '<i class="fas fa-theater-masks"></i>',
+                'arts2': '<i class="fas fa-paint-brush"></i>',
+
+                'med': '<i class="fas fa-medkit"></i>',
+
+                'pha': '<i class="fas fa-pills"></i>',
+                'odo':  '<i class="fas fa-tooth"></i>',
+                'lng': '<i class="fas fa-language"></i>',
+                'jou': '<i class="far fa-newspaper"></i>',
+                'int': '<i class="fas fa-globe"></i>',
+                'ens': '<i class="fas fa-user-graduate"></i>',
+                'prof': '<i class="fas fa-chalkboard-teacher"></i>',
+                'env': '<i class="fas fa-recycle"></i>',
+                'esf': '<i class="fas fa-child"></i>',
+                'music': '<i class="fas fa-music"></i>',
+
+                'iut': '<i class="fas fa-microchip"></i>',
+
+                'mng': '<i class="fas fa-sitemap"></i>',
+                'ventes':'<i class="fas fa-shopping-cart"></i>'
+            },
+            'glyphicons': {
+
+                'library':'<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">',
+
+                'error': '<span class="glyphicon glyphicon-warning-sign" aria-hidden="true"></span>',
+                'wait': '<span class="glyphicon glyphicon-hourglass" aria-hidden="true"></span>',
+                'student': '<span class="glyphicon glyphicon-education" aria-hidden="true"></span>',
+
+                'sciences': '<span class="glyphicon glyphicon-dashboard" aria-hidden="true"></span>',
+                'chimie': '<span class="glyphicon glyphicon-tint" aria-hidden="true"></span>',
+                'pol': '<span class="glyphicon glyphicon-bullhorn" aria-hidden="true"></span>',
+                'eco': '<span class="glyphicon glyphicon-euro" aria-hidden="true"></span>',
+                'drt': '<span class="glyphicon glyphicon-lamp" aria-hidden="true"></span>',
+                'sport': '<span class="glyphicon glyphicon-flash" aria-hidden="true"></span>',
+                'letter': '<span class="glyphicon glyphicon-book" aria-hidden="true"></span>',
+                'med': '<span class="glyphicon glyphicon-header" aria-hidden="true"></span>',
+                'pha': '<span class="glyphicon glyphicon-header" aria-hidden="true"></span>',
+                'odo': '<span class="glyphicon glyphicon-header" aria-hidden="true"></span>',
+                'lng': '<span class="glyphicon glyphicon-globe" aria-hidden="true"></span>',
+                'mng': '<span class="glyphicon glyphicon-tags" aria-hidden="true"></span>',
+                'ventes': '<span class="glyphicon glyphicon-shopping-cart" aria-hidden="true"></span>',
+
+            }
+        }
+        %}
+
+        {% if debug %}
+            {{ '{#' }}{{ iconsCollections[icoColName].library|raw }}{{ '#}' }}
+            <div><span class="label label-danger">DEBUG VIEW ICONS ({{ icoColName }})</span>
+                <div class="btn-group" role="group" aria-label="{{ icoColName }} ">
+                    {% for k,ico in iconsCollections[icoColName] if(k!="library") %}
+                        <button type="button" class="btn btn-default" title="{{ k }} => {{ ico }}">{{ k }} {{ ico|raw }} </button>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        {#{% if ctx is not null %}#}
+        {#ctx icoCollection = {{ iconsCollections[icoColName]|json_encode }}#}
+        {#{% endif %}#}
+        {{ app.session.set(sessionVarName,iconsCollections[icoColName]) }}
+    {% endmacro initSessionIcoCollection  %}
+
+
+
+
+
+
+
+    {# new Macro d'ajout de formulaire
+ @entity* => source des données
+ @addTitle (option="") => ajouter un titre au formulaire
+ @new_form* => le patron/modèle du formulaire
+ @urlBase* => l'addresse de base auquel sera modulé pour faire appel aux routes d'ajout/edition/maj  (_edit, _new, _update)
+ @options => array()
+    options['btSize'] (defaut="") => '', 'xs', 'sm', "lg" (BS btn-xxx SIZING http://getbootstrap.com/components/#btn-groups-sizing)
+    options['theme'] (defaut="")  => 'bootstrap_3_horizontal_layout.html.twig' ou 'bootstrap_3_layout.html.twig' ou autre personalisé http://symfony.com/blog/new-in-symfony-2-6-bootstrap-form-theme
+    options['champs'][handleOnCreate,handleOnDelete,arDefaults,cTotal,tabClass,editable,ErrCounter,...] cf macro addTabForms(...)
+
+
+
+      Notes : labels et formattages des champs sont hérités de la classe du Formulaire :
+                $bundleName+"/Form/"+$entityName+"Form.php"
+#}
+    {% macro new_old(entity,addTitle,new_form,urlBase,btSize,theme,noback) %}
+        {% import _self as crudMacro %}
+
+        {% if theme|default("")!='' %}{% form_theme new_form theme %}{% endif %}
+        {% if addTitle|default('')!="" %}
+            <div class="text-center center-block">
+                <span class="panel panel-primary h3"  style="padding: 5px 25px; ">{{ addTitle|raw }}</span>
+            </div>
+            <br>
+        {% endif %}
+        {{ crudMacro.addLegendeForm() }}
+
+        {#{% form_theme new_form 'bootstrap_3_layout.html.twig' %}#}
+        {#<div class="container-fluid">#}
+        {{ form_start(new_form) }}
+        {% if new_form.submit is defined %}
+            <span class="hidden" style="display: none;">{{ form_label(new_form.submit) }} {{ form_widget(new_form.submit) }}</span>
+        {% endif %}
+        {#
+        <span class="text-center" style="padding: 25px;" >
+            <a href="{{ path(urlBase) }}"><button class="btn btn-{{ btSize  }} btn-danger pull-left" title="Retour à la liste..."><span class="glyphicon glyphicon-remove"></span> Annuler </button></a>
+            <a href="{{ path(urlBase~'_create') }}"  ><button type="submit" class="btn btn-{{ btSize  }} btn-success pull-right" title="Valider"><span class="glyphicon glyphicon-ok"></sp forValider</button></a>
+        </span>#}
+        {% for v in new_form %}
+            <div class="form-group {{ ('hidden' in v.vars.block_prefixes)?"hidden":"" }}">
+                <label class="col-sm-2 control-label {{ v.vars.required|default(false)?"required text-danger":"" }}" for="{{ v.vars.id }}">{{ v.vars.label|default(v.vars.name|humanize)|raw }}</label>
+                <div class="col-sm-10">
+                    {% if v.vars.prototype is defined %}
+                        {% import _self as crudMacro %}
+                        {{ crudMacro.addTabForms(v.vars.prototype,v,v.vars.name) }}
+                    {% else %}
+                        {{ form_widget(v) }}
+                        {{ form_errors(v) }}
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+        {#{{ form_widget(new_form) }}#}
+        <div class="pull-bottom">
+            <button type="submit"  class="btn btn-{{ btSize  }} btn-success pull-right" title="Ajouter..."><span class="glyphicon glyphicon-ok"></span> Valider</button>
+            <a href="{{ path(urlBase~'_index') }}" class="btn btn-{{ btSize  }} btn-danger pull-left" title="Retour à la liste..."><span class="glyphicon glyphicon-remove"></span> Annuler</a>
+            {#{% if edit_form.back is defined %}{{ form_widget(edit_form.back,{ 'compound': false}) }}{% endif %}#}
+            {#{% if edit_form.submit is defined %}{{ form_widget(edit_form.submit,{ 'compound': false}) }}{% endif %}#}
+        </div>
+        {#<div>
+            {% if edit_form.back is defined %}{{ form_widget(edit_form.back,{ 'compound': false}) }}{% endif %}
+            {% if edit_form.submit is defined %}{{ form_widget(edit_form.submit,{ 'compound': false}) }}{% endif %}
+        </div>#}
+        {#<a href="{{ path(urlBase) }}" class="btn btn-{{ btSize  }} btn-danger pull-left" title="Retour à la liste des modèles"><span class="glyphicon glyphicon-remove"></span> Annuler</a>#}
+        {% if noback|default(0)==0 %}
+            <a href="{{ path(urlBase) }}" class="btn btn-{{ btSize  }} btn-danger pull-left" title="Retour à la liste des modèles"><span class="glyphicon glyphicon-remove"></span> Annuler</a>
+        {% endif %}
+        <span class="hidden">{{ form_rest(new_form) }}</span>
+        {{ form_end(new_form) }}
+        {#</div>#}
+        <br>
+    {% endmacro %}
+
+    {% macro new_and_edit(entity,new_form,urlBase,params,debug) %}
+        {# old (entity,addTitle,new_form,urlBase,options) #}
+        {% import _self as crudMacro %}
+        {% set FQCN=entity|fqcn %}
+        {% set globals=render(controller('DecoratorBundle:Tools:globalConfig',{ }))|json %}
+        {% set options=params['options']|default([]) %}
+        {% set detectedMode="?"%}
+
+        {% if params in ["","auto"] %}
+            {% set detectedMode="auto" %}
+            {% set arItems=render(controller('DecoratorBundle:Tools:autoConfig', { 'FQCN': FQCN, 'debug':debug  } ))|json %}
+        {% elseif params in ["yaml","yml"] %}
+            {% set detectedMode=params %}
+            {% set ymlConfig=render(controller('DecoratorBundle:Tools:yamlConfig', { 'FQCN': FQCN, 'path': '', 'debug':debug  } ))|json %}
+            {% set arItems=ymlConfig['fields']|default([]) %}
+            {% set options=ymlConfig['options']|default([]) %}
+        {% elseif params is iterable  %}
+            {# Object {... }#}
+            {% set detectedMode="Full-Customizable" %}
+            {% if params['fields'] is defined %}
+                {% set arItems=params['fields']|default([]) %}
+                {% set options=params['options']|default([]) %}
+            {% else %}
+                {# ['fieldA','fieldB','fieldC',...]   #}
+                {% set options=params['options']|default([]) %}
+                {% if globals.semiAutomatic|default('auto')=="auto" %}
+                    {% set detectedMode="Semi-Automatic (auto)" %}
+                    {% set autoItems=render(controller('DecoratorBundle:Tools:autoConfig', { 'FQCN': FQCN, 'debug':debug  } ))|json %}
+                {% else %}
+                    {% set detectedMode="Semi-Automatic (yml)" %}
+                    {% set ymlConfig=render(controller('DecoratorBundle:Tools:yamlConfig', { 'FQCN': FQCN, 'path': '', 'debug':debug  } ))|json %}
+                    {% set autoItems=ymlConfig['fields']|default([]) %}
+                    {% set options=ymlConfig['options']|default([]) %}
+                {% endif %}
+                {% set arItems={} %}
+                {%  for f in params if(autoItems[f] is defined) %}
+                    {% set arItems=arItems|merge( { (f): autoItems[f] }) %}
+                {% endfor %}
+            {% endif %}
+        {% endif %}
+
+        {% if debug %}
+            {{ dump("MODE = "~detectedMode~" \n(items,options,globals)",arItems,options,globals) }}
+        {% endif %}
+
+        {% set title=options.title|default("") %}
+        {% set style=options.style|default(globals.style|default("")) %}
+        {% set btSize=options.btSize|default(globals.btSize|default("")) %}
+        {% set width=options.width|default(globals.width|default("100%")) %}
+
+        {% set new=options.new|default(globals.new|default(true)) %}
+        {% set edit=options.edit|default(globals.edit|default(true)) %}
+        {% set show=options.show|default(globals.show|default(true)) %}
+        {% set delete=options.delete|default(globals.delete|default(true)) %}
+        {% set back=options.back|default(globals.back|default(true)) %}
+
+        {% set theme=options.theme|default( globals.theme|default("") )  %}
+
+        {% if theme!="" %}{% form_theme new_form theme %}{% endif %}
+
+        {% if title!="" %}
+            <div class="text-center center-block">
+                <span class="panel panel-primary h3"  style="padding: 5px 25px; ">{{ addTitle|raw }}</span>
+            </div>
+            <br>
+        {% endif %}
+        {{ crudMacro.addLegendeForm() }}
+
+        {#<div class="container-fluid">#}
+        {{ form_start(new_form) }}
+        {% if new_form.submit is defined %}
+            <span class="hidden" style="display: none;">{{ form_label(new_form.submit) }} {{ form_widget(new_form.submit) }}</span>
+        {% endif %}
+        {% for v in new_form if(v.vars.name  in ['_token']) %}
+            <span class="hidden" style="display: none;">{{ form_label(new_form._token) }} {{ form_widget(new_form._token) }}</span>
+        {% endfor %}
+
+        {#
+        <span class="text-center" style="padding: 25px;" >
+            <a href="{{ path(urlBase) }}"><button class="btn btn-{{ btSize  }} btn-danger pull-left" title="Retour à la liste..."><span class="glyphicon glyphicon-remove"></span> Annuler </button></a>
+            <a href="{{ path(urlBase~'_create') }}"  ><button type="submit" class="btn btn-{{ btSize  }} btn-success pull-right" title="Valider"><span class="glyphicon glyphicon-ok"></sp forValider</button></a>
+        </span>#}
+
+
+        {% for v in new_form if(v.vars.name not in ['_token']) %}
+            <div class="form-group {{ ('hidden' in v.vars.block_prefixes)?"hidden":"" }}">
+                <label class="col-sm-2 control-label {{ v.vars.required|default(false)?"required text-danger":"" }}" for="{{ v.vars.id }}">{{ v.vars.label|default(arItems[v.vars.name].label) }}</label>
+                <div class="col-sm-10">
+                    {#{{ dump(v) }}#}
+                    {% if v.vars.prototype is defined %}
+                        {{ crudMacro.addTabForms(v.vars.prototype,v,v.vars.name,
+                            options[v.vars.name]['handleOnCreate']|default(crudMacro.defValues('handleOnCreate')),
+                            options[v.vars.name]['handleOnDelete']|default(crudMacro.defValues('handleOnDelete')),
+                            options[v.vars.name]['arDefaults']|default(crudMacro.defValues('arDefaults')),
+                            options[v.vars.name]['cTotal']|default(crudMacro.defValues('cTotal')),
+                            options[v.vars.name]['tabClass']|default(crudMacro.defValues('tabClass')|raw),
+                            options[v.vars.name]['editable']|default(1),
+                            options[v.vars.name]['ErrCounter']|default(crudMacro.defValues('ErrCounter'))
+                        )
+                        }}
+                    {% else %}
+                        {{ form_widget(v) }}
+                        {{ form_errors(v) }}
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+        {#{{ form_widget(new_form) }}#}
+        <div class="pull-bottom">
+            <button type="submit"  class="btn btn-{{ btSize  }} btn-success pull-right" title="Ajouter..."><span class="glyphicon glyphicon-ok"></span> Valider</button>
+            <a href="{{ path(urlBase~'_index') }}" class="btn btn-{{ btSize  }} btn-danger pull-left" title="Retour à la liste..."><span class="glyphicon glyphicon-remove"></span> Annuler</a>
+            {#{% if back %}#}
+            {#<a href="{{ path(urlBase~'_index') }}" class="btn btn-{{ btSize  }} btn-danger pull-left" title="Retour à la liste"><span class="glyphicon glyphicon-remove"></span> Retour</a>#}
+            {#{% endif %}#}
+
+            {#{% if edit_form.back is defined %}{{ form_widget(edit_form.back,{ 'compound': false}) }}{% endif %}#}
+            {#{% if edit_form.submit is defined %}{{ form_widget(edit_form.submit,{ 'compound': false}) }}{% endif %}#}
+        </div>
+        {#<div>
+            {% if edit_form.back is defined %}{{ form_widget(edit_form.back,{ 'compound': false}) }}{% endif %}
+            {% if edit_form.submit is defined %}{{ form_widget(edit_form.submit,{ 'compound': false}) }}{% endif %}
+        </div>#}
+        {#<a href="{{ path(urlBase) }}" class="btn btn-{{ btSize  }} btn-danger pull-left" title="Retour à la liste des modèles"><span class="glyphicon glyphicon-remove"></span> Annuler</a>#}
+        <span class="hidden">{{ form_rest(new_form) }}</span>
+        {{ form_end(new_form) }}
+        {#</div>#}
+        <br>
+    {% endmacro %}
+
+
+    {% macro defValues(val,def) %}
+        {% set _defVal={
+            'theme': 'bootstrap_3_horizontal_layout.html.twig',
+            'btSize': "16",
+            'handleOnCreate': "",
+            'handleOnDelete': "",
+            'arDefaults': [],
+            'cTotal': {},
+            'tabClass': 'table table-bordered table-striped table-small',
+            'editable': 1,
+            'ErrCounter': ""
+        }
+        %}
+        {{ _defVal.val|default(def|default('NON DEFINI !!!')) }}
+    {% endmacro %}
+
+{% endspaceless %}

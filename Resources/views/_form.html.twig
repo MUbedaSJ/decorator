@@ -1,0 +1,133 @@
+{% if theme!="" %}{% form_theme edit_form theme %}{% endif %}
+{% trans_default_domain domaine|default('messages') %} {# false  #}
+{{ form_start(edit_form) }}
+{% if edit_form.submit is defined %}
+    <span class="hidden" style="display: none;">{{ form_widget(edit_form.submit) }}</span>
+{% endif %}
+{#{% if edit_form.back is defined %}{{ form_widget(edit_form.back) }}{% endif %}#}
+{#{% if edit_form.submit is defined %}{{ form_widget(edit_form.submit) }}{% endif %}#}
+
+{#{{ dump(edit_form.vars.errors) }}#}
+{#{{ form_errors(edit_form) }}#}
+
+{% if errors|default("")!="" %}
+    <div class="alert alert-danger well-sm">
+        ERRORS
+        {{ dump(errors) }}
+    </div>
+{% endif %}
+{% for v in edit_form %}
+    <div class="form-group container-fluid {{ ('hidden' in v.vars.block_prefixes)?"hidden":"" }}">
+
+        {% set label=v.vars.label|default(v.vars.name|humanize) %}
+        {% if (arItems[v.vars.name] is defined) and (arItems[v.vars.name].label|default("")!="") %}
+            {% set label=arItems[v.vars.name].label %}
+            {% set curItem=arItems[v.vars.name] %}
+        {% endif %}
+
+        {#{% if globals.translation|default(false)  %}#}
+        {#{% set label= (cfg_entity.name~"."~v.vars.name) |trans({ 'message': v.vars.name, 'id':v.vars.name, 'domaine': cfg_entity.name, 'locale':'fr' })%}#}
+        {#{% endif %}#}
+
+        <label class="col-sm-2 control-label {{ v.vars.required|default(false)?"required text-danger":"" }}" for="{{ v.vars.id }}">{{ label|raw }}
+            {% if (curItem.tips|default("")!="") %}<span class="bt-popover {{ curItem.icon|default(options.popover.icon|default(globals.popover.icon|default('glyphicon glyphicon-info-sign')))|raw }}" data-placement="{{ curItem.placement|default(options.popover.placement|default(globals.popover.placement|default('bottom')))|raw }}" data-html="true" data-trigger="{{ curItem.trigger|default(options.popover.trigger|default(globals.popover.trigger|default('hover')))|raw }}" data-toggle="popover" data-template="{{ curItem.template|default(options.popover.template|default(globals.popover.template))|raw|replace({'"':'""'}) }}" data-title="{{ curItem.label|default(varName|default(aItem.value|default("Informations")))|raw }}" data-content="{{ curItem.tips|default("")|replace({"'":"''"})|nl2br|raw }}"></span>{% endif %}
+        </label>
+        <div class="col-sm-10">
+            {% if v.vars.prototype is defined %}
+                {{ crudMacro.addTabForms(v.vars.prototype,v,v.vars.name) }}
+            {% else %}
+                {{ form_errors(v) }}
+                {% if not v.vars.valid %}
+                    <ul>
+                        {# Loop through every form item #}
+                        {% for child in v.children %}
+                            {# Display the errors of the form item #}
+                            {%for error in v.vars.errors%}
+                                <li>{{error.message}}</li>
+                            {%endfor%}
+                        {%endfor%}
+                    </ul>
+                {%endif%}
+
+                {{ form_widget(v) }}
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}
+
+{{ form_rest(edit_form) }}
+
+<div class="pull-bottom">
+    <button type="submit"  class="btn btn-{{ btSize  }} btn-success pull-right" title="Enregistrer les modifications"><span class="glyphicon glyphicon-ok"></span> Valider</button>
+    {#{% if back %}#}
+    <a href="{{ path(urlBase~'_index') }}" class="btn btn-{{ btSize  }} btn-danger pull-left" title="Retour à la liste..."><span class="glyphicon glyphicon-remove"></span> Annuler</a>
+    {#{% endif %}#}{#{% if edit_form.back is defined %}{{ form_widget(edit_form.back,{ 'compound': false}) }}{% endif %}#}
+    {#{% if edit_form.submit is defined %}{{ form_widget(edit_form.submit,{ 'compound': false}) }}{% endif %}#}
+
+
+    {% if arActions is defined and arActions is iterable and arActions|length>0 %}
+        <span class="">
+        <div class="text-center" >
+            {% for a in arActions %}
+                {% set showBt=true %}
+                {% if a.roles is defined %}
+                    {% set showBt=false %}
+                    {% if a.roles is iterable %}
+                        {% for aRole in a.roles %}
+                            {% if is_granted(aRole) %}
+                                {% set showBt=true %}
+                            {% endif %}
+                        {% endfor %}
+                    {% elseif a.roles!="" %}
+                        {% set showBt=is_granted(a.roles) %}
+                    {% endif %}
+                {% endif%}
+                {% if showBt==true and (edit_form.vars.value.id is defined) %}
+
+                    {% if (a.onclick is defined) and (a.onclick!='') and '%id%' in a.onclick %}
+                        {% set onclick = a.onclick|replace({"%id%": edit_form.vars.value.id }) %}
+                    {% else %}
+                        {% set onclick = a.onclick|default('') %}
+                    {% endif %}
+
+                    {% if (a.params is defined) and (a.params|length>0) %}
+                        {% set paramsOK=a.params|default([]) %}
+                        {% for k,p in a.params %}
+                            {#{% if '%id%' in p %}#}
+                            {#{%set paramsOK = paramsOK|merge({k:{ k:p|replace({"%id%":entity.id })} }) %}#}
+                            {#{%set a.params[k]  =  p|replace({"%id%":entity.id }) %}#}
+                            {#{% endif %}#}
+                            {#{% if '%' in p %}#}
+                            {#{%set paramsOK = paramsOK|merge({k:{ k:p|replace({"%id%":entity.id })} }) %}#}
+                            {#{%set a.params[k]  =  p|replace({ p:entity.vars.(p|replace("%":"")).value }) %}#}
+                            {#{% endif %}#}
+
+
+                        {% endfor %}
+                        {%set paramsOK = paramsOK|merge({ 'id': edit_form.vars.value.id}) %}
+                        {% if edit_form.vars.value.crypt|default("")!="" %}
+                            {%set paramsOK = paramsOK|merge({ 'crypt':edit_form.vars.value.crypt }) %}
+                        {% endif %}
+
+                    {% else %}
+                        {%set paramsOK = { 'id': edit_form.vars.value.id } %}
+                        {% if edit_form.vars.value.crypt|default("")!="" %}
+                            {%set paramsOK = paramsOK|merge({ 'crypt': edit_form.vars.value.crypt }) %}
+                        {% endif %}
+                    {% endif %}
+
+                    {% if a.type|default("") in ["button","submit"] %}
+                        <button type="{{ a.type }}" {% if (onclick!='') %} onclick="{{ onclick|raw }}" {% endif %} class="{{ a.class|default("") }}" {% if a.title is defined and a.title!='' %} title="{{ a.title }}" {% endif %} id="{{ a.id|default("") }}" name="{{ a.name|default("") }}" /> {{ a.label|default('') }}</button>
+                    {% else %}
+                        <a {% if (onclick!='') %} onclick="{{ onclick|raw }}" {% endif %}{% if (a.path is defined) and (a.path!='') %} href="{{ path(a.path,paramsOK) }}" target="{{ a.target|default("") }}" {%endif%}><span class="btn btn-{{ btSize }}  {{ a.class|default("") }}" {% if a.title is defined and a.title!='' %} title="{{ a.title }}" {% endif %}> {{ a.label|default('') }}</span></a>
+                    {% endif %}
+
+                {% endif %}
+            {% endfor %}
+        </div>
+    </span>
+    {% endif %}
+
+</div>
+{{ form_end(edit_form) }}
+<br>

@@ -1,0 +1,4 @@
+# app/config/routing.yml
+referens:
+    resource: "@DecoratorBundle/Controller/"
+    type:     annotation

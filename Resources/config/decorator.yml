@@ -1,0 +1,8 @@
+# DecoratorBundle Parameters
+decorator:
+    api_secure_role: ''
+    ajax_secure_role: ''
+    update_redir_route: '_index' # ['_index','_view']
+    use_translation: false
+    use_labels: true
+

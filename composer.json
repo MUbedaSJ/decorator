@@ -1,0 +1,43 @@
+{
+    "name": "amu/decorator-bundle",
+    "type": "symfony-bundle",
+    "description": "DecoratorBundle is a AMU crud decoration library/tools help quicly make beautifull CRUD (using macros and services), this bundle for Symfony 2, 3 and 4",
+    "keywords": ["amu", "crud", "ihm","datatable","bs","jquery"],
+    "homepage": "http://dosi.univ-amu.fr/",
+    "license": "GPL",
+    "authors": [
+        {
+            "name": "Michel UBÉDA SAN JOSÉ",
+            "email": "michel.ubeda@univ-amu.fr"
+        },
+        {
+            "name": "AMU-DOSI-Pôle Développement",
+            "email": "dosi-pole-dev-php@univ-amu.fr"
+        }
+    ],
+    "support": {
+        "email": "michel.ubeda@univ-amu.fr",
+        "issues": "https://projets-dev.univ-amu.fr/projects/decorator/issues",
+        "source": "https://projets-dev.univ-amu.fr/projects/decorator/repository"
+    },
+    "require": {
+        "php": "^5.5.9|>=7.0.8",
+        "symfony/framework-bundle": "~3.4 | ^4.0",
+        "symfony/config": "~2.8|~3.0|~4.0",
+        "symfony/dependency-injection": "~2.8|~3.0|~4.0",
+        "symfony/routing": "~2.8|~3.0|~4.0",
+        "symfony/yaml": "^3.3",
+        "sensio/framework-extra-bundle": "*"
+    },
+    "autoload": {
+        "psr-4": { "Amu\\Bundle\\DecoratorBundle\\": "" }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "master"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+
+}

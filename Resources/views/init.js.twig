@@ -1,0 +1,143 @@
+$(function() {
+    try{ $('[data-toggle="popover"],.bt-popover').popover(); }catch(e){}
+    try{ $('.dropdown-toggle').dropdownHover(); }catch(e){}
+
+    $("table.zebra tbody tr:odd").css("backgroundColor","white");
+    $("table.zebra tbody tr:even").css("backgroundColor","#F5F5F5");
+    try{ $(".FixedHeader_Cloned").remove(); }catch(e){}
+
+    $('.datatable,.dataTable').addClass('ui-widget-content');
+    $('.datatable,.dataTable').each(function(){
+        var opt={};
+        var f=(($(this).attr("filterTxt")!=="")?$(this).attr("filterTxt"):"");
+        var ft=(($(this).attr("filter")!=="")?$(this).attr("filter"):"");
+        var fh=(($(this).attr("fixedHeader")!==undefined)?($(this).attr("fixedHeader")==="true"):false);
+        opt={
+            "language":
+                { // version 1.10.1
+                    processing:     "Traitement en cours...",
+                    search:         "Rechercher&nbsp;:",
+                    lengthMenu:     "Afficher _MENU_ &eacute;l&eacute;ments",
+                    info:           "Affichage de l'&eacute;lement _START_ &agrave; _END_ sur _TOTAL_ &eacute;l&eacute;ments",
+                    infoEmpty:      "Affichage de l'&eacute;lement 0 &agrave; 0 sur 0 &eacute;l&eacute;ments",
+                    infoFiltered:   "(filtr&eacute; de _MAX_ &eacute;l&eacute;ments au total)",
+                    infoPostFix:    "",
+                    loadingRecords: "Chargement en cours...",
+                    zeroRecords:    "Aucun &eacute;l&eacute;ment &agrave; afficher",
+                    emptyTable:     "Aucune donnée disponible dans le tableau",
+                    paginate: {
+                        first:      "Premier",
+                        previous:   "Pr&eacute;c&eacute;dent",
+                        next:       "Suivant",
+                        last:       "Dernier"
+                    },
+                    aria: {
+                        sortAscending:  ": activer pour trier la colonne par ordre croissant",
+                        sortDescending: ": activer pour trier la colonne par ordre décroissant"
+                    }
+                },
+            "destroy": true,
+            "retrieve": true,
+            "jQueryUI": true,
+            "aoColumnDefs": [
+                { aTargets: [ 'no-searchable' ], bSearchable: false },
+                { aTargets: [ 'no-sortable' ], bSortable: false },
+            ],
+            "drawCallback": function() {
+                /*optimisation des marges/lignes dans les tablesorter/datatable.. */
+                $(this).find('tbody td').css({ 'border-right':'1px solid #C5DBEC', 'border-bottom':'1px solid #C5DBEC' }); // 0.5px solid #C5DBEC
+                $(this).find('thead tr th,tfoot tr th').css({ 'border-left': '0px', 'border-right':'1px solid #C5DBEC', 'border-bottom':'1px solid #C5DBEC','border-top':'0px', }); // 0.5px solid #C5DBEC
+
+                $(this).find('thead tr th:first,tbody tr th:last').css({'border-left':'0px'});
+                $(this).find('tbody tr td:first,tbody tr td:last').css('border-left','0px');
+                $(this).find('tfoot tr td:first,tfoot tr td:last').css('border-left','0px');
+                $(this).css('margin-left',"-1px");
+
+                try{ $('[data-toggle="popover"],.bt-popover').popover(); }catch(e){}
+                try{ $('.dropdown-toggle').dropdownHover(); }catch(e){}
+            }
+        };
+
+        if(ft!==""){
+            opt["pagingType"]="full_numbers";
+            opt["displayLength"]=ft;
+            opt["lengthMenu"]=[[10,25,50,100,200,500,-1], [10,25,50,100,200,500,"Tous"]];
+        }
+        //
+        // if(fh){ opt["paginate"]=false; }
+        //
+        var dt=$(this).DataTable(opt);
+        /* FixedHeader */
+        if(fh){ try{ new $.fn.DataTable.FixedHeader( dt ); }catch(e){} }
+
+        /* obsolète resolv bug ancienne version; à partir 1.10.4 => OK MAIS conservé pour compatibilité versions antérieures */
+        if(f!==undefined) { dt.fnFilter(f); /* .fnDraw();*/ }
+        //
+
+        $('.dataTables_wrapper').addClass("ui-widget-header ui-corner-all");
+        $('select[aria-controls],input[aria-controls]').css("color","gray");
+        if($('.datatable thead').css('width')){
+            $('.dataTables_wrapper,.FixedHeader_Cloned').css('width', parseInt($('.datatable thead').css('width').toString().replace('px;','')) +5 + "px" );
+        }
+        $(".FixedHeader_Cloned").css("z-index",""); // resolv bug visuel ( FixedHeader_Cloned doit être en dessous des UI Dialog de JQuery (104=>100)
+        $(".FixedHeader_Cloned table").each(function(i){ $(this).css({ "width": (parseInt( $(this).css("width").toString().replace("px",""))+28)+"px", "height": (parseInt( $(this).css("height").toString().replace("px",""))+8)+"px",  });  });
+
+        {#
+
+        // permet d'effacer le filtre du datatable sur click dans le champs "filtre"
+        $('input[aria-controls]').click(function(){ $(this).val("").keyup(); });
+        //resolv bug dataTable first view paging = -1
+        $('select[aria-controls]').change();
+          //.css({ 'width':"auto",'color':'white' });
+        //$('.dataTables_wrapper,.dataTables_length,.dataTables_filter,.dataTables_paginate,.dataTables_info,.fg-toolbar').css('color',"gray");
+        // $('.dataTables_length label,.dataTables_filter label,.dataTables_info,.dataTables_paginate,paging_full_numbers').css('color',"white");
+        $('a[aria-controls]').css('color',"white");
+        $('a.fg-button').css("padding","2px");
+        $('.dataTables_length label,.dataTables_filter label').css('padding',"5px;");
+
+        #}
+
+    });
+
+    $('.select2').select2({  language: 'fr'});
+
+    $('.strLimitCounter[maxlength]').each(function(){
+        var id=$(this).attr("id");
+        var max=$(this).attr("maxlength");
+        $('<span class="alert alert-warning well-sm pull-right" style="padding:2px;">[Compteur de caractères <span class="label " id="_cptCar_'+id+'">0</span> sur <span class="label label-danger">'+max+'</span> max.]</span>').insertAfter($(this));
+        $("#"+id).bind('keyup', function(){
+            var id=$(this).attr('id');
+            var l=$(this).val().toString().length;
+            var cid='#_cptCar_'+id;
+            var max=$(this).attr("maxlength");
+            $(cid).html(l);
+            if(l>max){
+                $(cid).attr('class','label label-danger');
+            }else{
+                $(cid).attr('class','label label-success');
+            }
+        });
+        $(this).keyup();
+    });
+
+    $(".datetimeRO").each(function(){
+        var id = $(this).attr('id');
+        try { $("#dtViewer_" + id).remove(); }catch (e){}
+        var $div = $('<div id="dtViewer_' + id + '" class="ui-helper-clearfix" ></div>');
+        $div.insertBefore($(this));
+        $("#dtViewer_" + id).datepicker({ setDate:$(this).attr('value')});
+        $(this).bind('change',function(){ $("#dtViewer_"+$(this).attr('id') ).datepicker( "setDate",$(this).attr('value') ); });
+    });
+    try {
+        $(".datepicker").datepicker({dateFormat:"dd/mm/yy"});
+        $(".datepicker2").datepicker({ "setDate":"10/12/2012" });
+        $(".datepickerYM").datepicker({dateFormat:"dd/mm/yy",changeYear: true,changeMonth:true});
+        $(".datetimepickerWT").datetimepicker({dateFormat:"dd/mm/yy",timeFormat: "HH:mm",minuteGrid:10,hourGrid:2,hourMin:8,hourMax:18});
+        $(".datetimepicker").datetimepicker({dateFormat:"dd/mm/yy",timeFormat: "HH:mm",minuteGrid:10,hourGrid:4});
+    } catch (ex) {}
+    try { $(".timepicker").timepicker({timeFormat: "HH:mm",minuteGrid:5,hourGrid:2}); } catch (ex) {}
+    // resolv bug css calendar
+//     $(".ui-tpicker-grid-label").css("font-size","5px");
+//     $(".ui-slider-handle").css("width","1.em").css("height","1.em");
+
+});

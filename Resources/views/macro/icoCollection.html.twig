@@ -1,0 +1,91 @@
+{% spaceless %}
+    {% macro getArIcoCollection(icoColName,debug) %}
+    {% set iconsCollections={
+
+        'fontAwesome': {
+
+            'library': '<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">',
+
+            'error': '<i class="fas fa-exclamation-triangle"></i>',
+            'wait': '<i class="fa fa-spinner fa-spin" style="font-size:24px"></i>',
+            'student': '<i class="fas fa-graduation-cap"></i>',
+            'default': '<i class="fas fa-university"></i>',
+            'research': '<i class="fas fa-microscope"></i>',
+
+            'sciences': '<i class="fab fa-react"></i>',
+            'chimie': '<i class="fas fa-flask"></i>',
+            'info': '<i class="fas fa-laptop-code"></i>',
+            'math': '<i class="fas fa-drafting-compass"></i>',
+
+            'pol': '<i class="fa fa-sitemap"></i>',
+            'pol': '<i class="fas fa-award"></i>',
+            'eco':'<i class="fas fa-chart-line"></i>',
+
+            'drt':'<i class="fa fa-balance-scale"></i>',
+
+            'sport': '<i class="fas fa-walking"></i>',
+            'letter': '<i class="fas fa-book"></i>',
+            'arts': '<i class="fas fa-theater-masks"></i>',
+            'arts2': '<i class="fas fa-paint-brush"></i>',
+
+            'med': '<i class="fas fa-medkit"></i>',
+
+            'pha': '<i class="fas fa-pills"></i>',
+            'odo':  '<i class="fas fa-tooth"></i>',
+            'lng': '<i class="fas fa-language"></i>',
+            'jou': '<i class="far fa-newspaper"></i>',
+            'int': '<i class="fas fa-globe"></i>',
+            'ens': '<i class="fas fa-user-graduate"></i>',
+            'prof': '<i class="fas fa-chalkboard-teacher"></i>',
+            'env': '<i class="fas fa-recycle"></i>',
+            'esf': '<i class="fas fa-child"></i>',
+            'music': '<i class="fas fa-music"></i>',
+
+            'iut': '<i class="fas fa-microchip"></i>',
+
+            'mng': '<i class="fas fa-sitemap"></i>',
+            'ventes':'<i class="fas fa-shopping-cart"></i>'
+        },
+        'glyphicons': {
+
+            'library':'<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">',
+
+            'error': '<span class="glyphicon glyphicon-warning-sign" aria-hidden="true"></span>',
+            'wait': '<span class="glyphicon glyphicon-hourglass" aria-hidden="true"></span>',
+            'student': '<span class="glyphicon glyphicon-education" aria-hidden="true"></span>',
+
+            'sciences': '<span class="glyphicon glyphicon-dashboard" aria-hidden="true"></span>',
+            'chimie': '<span class="glyphicon glyphicon-tint" aria-hidden="true"></span>',
+            'pol': '<span class="glyphicon glyphicon-bullhorn" aria-hidden="true"></span>',
+            'eco': '<span class="glyphicon glyphicon-euro" aria-hidden="true"></span>',
+            'drt': '<span class="glyphicon glyphicon-lamp" aria-hidden="true"></span>',
+            'sport': '<span class="glyphicon glyphicon-flash" aria-hidden="true"></span>',
+            'letter': '<span class="glyphicon glyphicon-book" aria-hidden="true"></span>',
+            'med': '<span class="glyphicon glyphicon-header" aria-hidden="true"></span>',
+            'pha': '<span class="glyphicon glyphicon-header" aria-hidden="true"></span>',
+            'odo': '<span class="glyphicon glyphicon-header" aria-hidden="true"></span>',
+            'lng': '<span class="glyphicon glyphicon-globe" aria-hidden="true"></span>',
+            'mng': '<span class="glyphicon glyphicon-tags" aria-hidden="true"></span>',
+            'ventes': '<span class="glyphicon glyphicon-shopping-cart" aria-hidden="true"></span>',
+
+        }
+    }
+    %}
+    {% if (icoColName|default("")=="") %}{% set icoColName='fontAwesome' %}{% endif %}
+    {% if debug is null %}{% set debug=false %}{% endif %}
+    {{ iconsCollections[icoColName].library|raw }}
+    {% set icoCollection = iconsCollections[icoColName] %}
+    {% if debug %}
+    <div><span class="label label-danger">DEBUG VIEW ICONS ({{ icoColName }})</span>
+        {#<ul class="list-group">#}
+        <div class="btn-group" role="group" aria-label="...">
+            {% for k,ico in iconsCollections[icoColName] if(k!="library") %}
+                <button type="button" class="btn btn-default" title="{{ k }} => {{ ico }}">{{ k }} {{ ico|raw }} </button>
+            {% endfor %}
+        </div>
+        {#</ul>#}
+    </div>
+    {% endif %}
+    {% endmacro getIconeCollection %}
+
+{% endspaceless %}
