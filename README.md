@@ -1,8 +1,28 @@
-#Documentation :
+# Documentation :
 
-`A FAIRE...`
+`need to continue...`
 
-#1 Installation
+1. Installation
+
+Add repo to your project:
+
+Add to you into composer.json file:
+```php
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/MUbedaSJ/decorator/"
+        }
+    ],
+    "require": {
+        "MUbedaSJ/monolog": "master"
+    }
+}
+```
+
+> $ composer update ""
+
 If you want to use integrated ajax tools, please add routing include this lines to your configuration routes :
 <code>
 apogee:
