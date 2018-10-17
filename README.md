@@ -12,16 +12,16 @@ Add to you into composer.json file:
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/MUbedaSJ/decorator/"
+            "url": "https://github.com/MUbedaSJ/decorator"
         }
     ],
     "require": {
-        "MUbedaSJ/monolog": "master"
+        "MUbedaSJ/decorator": "master"
     }
 }
 ```
 
-> $ composer update ""
+> $ composer update "MUbedaSJ/decorator"
 
 If you want to use integrated ajax tools, please add routing include this lines to your configuration routes :
 <code>
