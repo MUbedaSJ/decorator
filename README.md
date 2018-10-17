@@ -9,7 +9,7 @@ Add repo to your project:
 Add to you into composer.json file:
 ```json
 {
-    "repositories": [maj
+    "repositories":
         {
             "type": "vcs",
             "url": "https://github.com/MUbedaSJ/decorator"
