@@ -1,24 +1,20 @@
 {
-    "name": "amu/decorator-bundle",
+    "name": "MUbedaSJ/decorator",
     "type": "symfony-bundle",
-    "description": "DecoratorBundle is a AMU crud decoration library/tools help quicly make beautifull CRUD (using macros and services), this bundle for Symfony 2, 3 and 4",
-    "keywords": ["amu", "crud", "ihm","datatable","bs","jquery"],
-    "homepage": "http://dosi.univ-amu.fr/",
+    "description": "DecoratorBundle is a crud decoration library/tools help quicly make beautifull CRUD (using macros and services), this bundle for Symfony 2, 3 and 4",
+    "keywords": ["decorator","form","crud","datatable","bs","jquery"],
+    "homepage": "https://github.com/MUbedaSJ/",
     "license": "GPL",
     "authors": [
         {
             "name": "Michel UBÉDA SAN JOSÉ",
-            "email": "michel.ubeda@univ-amu.fr"
-        },
-        {
-            "name": "AMU-DOSI-Pôle Développement",
-            "email": "dosi-pole-dev-php@univ-amu.fr"
+            "email": "michel.ubeda@gmail.com"
         }
     ],
     "support": {
-        "email": "michel.ubeda@univ-amu.fr",
-        "issues": "https://projets-dev.univ-amu.fr/projects/decorator/issues",
-        "source": "https://projets-dev.univ-amu.fr/projects/decorator/repository"
+        "email": "michel.ubedagmail.com",
+        "issues": "https://github.com/MUbedaSJ/decorator/issues",
+        "source": "https://github.com/MUbedaSJ/decorator"
     },
     "require": {
         "php": "^5.5.9|>=7.0.8",
@@ -30,7 +26,7 @@
         "sensio/framework-extra-bundle": "*"
     },
     "autoload": {
-        "psr-4": { "Amu\\Bundle\\DecoratorBundle\\": "" }
+        "psr-4": { "MUbedaSJ\\Bundle\\DecoratorBundle\\": "" }
     },
     "extra": {
         "branch-alias": {

@@ -25,7 +25,7 @@ Add to you into composer.json file:
 
 If you want to use integrated ajax tools, please add routing include this lines to your configuration routes :
 ```json
-apogee:
+decorator:
     resource: '@DecoratorBundle/Resources/config/routing.yml'
 ```
 

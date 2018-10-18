@@ -1,5 +1,5 @@
 <?php
-namespace Amu\Bundle\DecoratorBundle\Maker;
+namespace MUbedaSJ\Bundle\DecoratorBundle\Maker;
 
 //use ApiPlatform\Core\Annotation\ApiResource;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
@@ -42,7 +42,7 @@ use Symfony\Component\Yaml\Yaml;
  * - créée un fichier de "translation.%locale%.yml" contenant les élément de traductions correspondant
  * * - amélioration des "liens crud" (show, add, edit, delete, back) en ajoutant des classes CSS de Bootstrap (btn...)
  *
- * @author Michel UBÉDA <michel.ubeda@univ-amu.fr>
+ * @author Michel UBÉDA <michel.ubeda@gmail.com>
  *
  * @inspired from MakeEntity (authors: Javier Eguiluz <javier.eguiluz@gmail.com>, Ryan Weaver <weaverryan@gmail.com>, Kévin Dunglas <dunglas@gmail.com>)
  */

@@ -1,5 +1,5 @@
 <?php
-namespace Amu\Bundle\DecoratorBundle\Twig;
+namespace MUbedaSJ\Bundle\DecoratorBundle\Twig;
 
 use Twig\Extension\RuntimeExtensionInterface;
 

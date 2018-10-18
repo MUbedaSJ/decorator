@@ -1,6 +1,6 @@
 services:
     decorator_service:
-        class: Amu\Bundle\DecoratorBundle\Service\Decorator
+        class: MUbedaSJ\Bundle\DecoratorBundle\Service\Decorator
         autowire: true
         autoconfigure: true
         public: true
@@ -9,10 +9,10 @@ services:
             - '@logger'
             - '@twig'
         tags:
-            - { name: monolog.logger, handler: amu  }
+            - { name: monolog.logger, handler: mu  }
 
     twig.json:
-        class: Amu\Bundle\DecoratorBundle\Twig\JsonExtension
+        class: MUbedaSJ\Bundle\DecoratorBundle\Twig\JsonExtension
         autowire: true
         autoconfigure: true
         public: true
@@ -22,7 +22,7 @@ services:
             - { name: "twig.extension" }
 
     twig.custom_runtime:
-        class: Amu\Bundle\DecoratorBundle\Twig\MyCustomTwigExtRuntime
+        class: MUbedaSJ\Bundle\DecoratorBundle\Twig\MyCustomTwigExtRuntime
         autowire: true
         autoconfigure: true
         public: true
@@ -33,7 +33,7 @@ services:
 
     # BEGIN new Maker tools service définition...
     maker.maker.make_translate:
-        class: Amu\Bundle\DecoratorBundle\Maker\MakeTranslate
+        class: MUbedaSJ\Bundle\DecoratorBundle\Maker\MakeTranslate
         arguments:
             - '@maker.file_manager'
             - '@maker.doctrine_helper'
@@ -42,7 +42,7 @@ services:
         tags: [ "maker.command" ]
 
     maker.maker.make_decoration:
-        class: Amu\Bundle\DecoratorBundle\Maker\MakeDecoration
+        class: MUbedaSJ\Bundle\DecoratorBundle\Maker\MakeDecoration
         arguments:
             - '@maker.file_manager'
             - '@maker.doctrine_helper'
@@ -55,6 +55,6 @@ services:
 #        autowire: true
 #        autoconfigure: true
 #        public: true
-#        class: Amu\Bundle\DecoratorBundle\Controller\ToolsController
+#        class: MUbedaSJ\Bundle\DecoratorBundle\Controller\ToolsController
 #        arguments:
 #            - $ws: '@decorator.ws_service'

@@ -1,8 +1,8 @@
 <?php
 
-namespace Amu\Bundle\DecoratorBundle\Service;
+namespace MUbedaSJ\Bundle\DecoratorBundle\Service;
 
-use Amu\Bundle\ReferensBundle\Controller\AjaxController;
+use MUbedaSJ\Bundle\ReferensBundle\Controller\AjaxController;
 use App\Entity\Groupe;
 use Egulias\EmailValidator\Exception\ExpectingCTEXT;
 use FOS\CKEditorBundle\Form\Type\CKEditorType;
@@ -28,7 +28,7 @@ use Twig\Environment;
 
 /**
  * Service d'introspection de la configuration ORM (entités/variables/définitions)
- * @author Michel UBÉDA <michel.ubeda@univ-amu.fr>
+ * @author Michel UBÉDA <michel.ubeda@gmail.com>
  * @version 1.0
  * @since 07/09/2018
  */

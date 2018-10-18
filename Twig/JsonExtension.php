@@ -1,8 +1,8 @@
 <?php
 
-namespace Amu\Bundle\DecoratorBundle\Twig;
+namespace MUbedaSJ\Bundle\DecoratorBundle\Twig;
 
-use Amu\Bundle\DecoratorBundle\Twig\MyCustomTwigExtRuntime;
+use MUbedaSJ\Bundle\DecoratorBundle\Twig\MyCustomTwigExtRuntime;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 

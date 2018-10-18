@@ -1,6 +1,6 @@
 <?php
 
-namespace Amu\Bundle\DecoratorBundle\DependencyInjection;
+namespace MUbedaSJ\Bundle\DecoratorBundle\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;

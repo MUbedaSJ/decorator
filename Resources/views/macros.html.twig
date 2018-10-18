@@ -59,8 +59,7 @@ crudMacrosLastModifs.html.twig
 16/11/2016 + resolv bug sur BT popover errors (#840)
 09/11/2016 + edit hide block hidden input x Comments +index => arActions :{ conditions:... }
 02/11/2016 + autoTables sur champs collections + resolv bug label avec espaces dans les appels/defs de fonctions js...
-
-= visuMacros_asf2.html?twig + tabsFormTools2.html.twig 27/10/2016 resolv bug arDefault init
+27/10/2016 resolv bug arDefault init
 
 + resolv bug sur value type array => realVal|default([])|json_encode
 + visu index => money => number_Format(...)
@@ -1088,11 +1087,11 @@ crudMacrosLastModifs.html.twig
                 {% endfor %}
                 {% if editable|default(1)>0 %}
                     <th>&nbsp;</th>
-                {% endif %}
+                {% endif %}z
             </tr>
             </thead>
 
-            {% form_theme vars_values '@Decorator/Form/_amu_form_tab.html.twig' %}
+            {% form_theme vars_values '@Decorator/Form/_my_form_tab.html.twig' %}
             {#{% form_theme vars_values 'form_table_layout.html.twig' %}#}
             <tbody class="tabCollectionContainer_{{ labelCleared }}" data-prototype="{{ form_widget(vars_prototype)|e }}" {{ (('Sub' in label)?'style="font-size:0.85em;"':'')|raw }}>
 
@@ -1380,7 +1379,7 @@ crudMacrosLastModifs.html.twig
                                         .appendTo( ul );
                                 };
                             },
-                            focus:function(event,ui){ /* $("#amu_pacbobundle_admins_login").val(ui.item.value); $("#amu_pacbobundle_admins_infos").val(ui.item.label);*/  },
+                            focus:function(event,ui){ /* $("#TEST_admins_login").val(ui.item.value); $("#TEST_admins_infos").val(ui.item.label);*/  },
                             open:function(event,ui){ try { ihm.initTips(); }catch (e){ } },
                             //search: function( event, ui ) { /*$("#_dbgListingPers_wait").show();*/ },
                             //response: function( event, ui ) { /*$("#_dbgListingPers_wait").hide();*/ },
@@ -1428,7 +1427,7 @@ crudMacrosLastModifs.html.twig
                                 'faculty':'<span class="glyphicon glyphicon-blackboard"></span>',
                                 'employee':'<span class="glyphicon glyphicon-briefcase"></span>',
                                 'student':'<span class="glyphicon glyphicon-education"></span>',
-                                'researcher':'<span class="glyphicon glyphicon-glyphicon glyphicon-globe"></span>',
+                                'researcher':'<span class="glyphicon glyphicon-globe"></span>',
                                 'alum':'<span class="glyphicon glyphicon-star-empty"></span>',
                                 '':'<span class="glyphicon glyphicon-question-sign"></span>',
                             };
@@ -1444,7 +1443,7 @@ crudMacrosLastModifs.html.twig
                                 'faculty':'<span class="glyphicon glyphicon-blackboard"></span>&nbsp;Enseignant',
                                 'employee':'<span class="glyphicon glyphicon-briefcase"></span>&nbsp;Personnel',
                                 'student':'<span class="glyphicon glyphicon-education"></span>&nbsp;Étudiant',
-                                'researcher':'<span class="glyphicon glyphicon-glyphicon glyphicon-globe"></span>&nbsp;Chercheur',
+                                'researcher':'<span class="glyphicon glyphicon-globe"></span>&nbsp;Chercheur',
                                 'alum':'<span class="glyphicon glyphicon-star-empty"></span>&nbsp;Ancien étudiant',
                                 '':'<span class="glyphicon glyphicon-question-sign"></span>&nbsp;Inconnue',
                             };
@@ -1472,9 +1471,9 @@ crudMacrosLastModifs.html.twig
         @param bool debug pour afficher [OPTIONNEL] le mode débug (listing des icônes de la collection choisie (defaut:"" => false)
         #EXEMPLE de récupération d'une icône après appel de la macro initSessionIcoCollection(...):
         <pre>
-            {{ '{% import "ApogeeBundle::macros.html.twig" as m %}
-            {{ m.initSessionIcoCollection('','apo_myIcons') }}
-            {% set myIcons=app.session.get('apo_myIcons',{}) %}
+            {{ '{% import "DecoratorBundle::macros.html.twig" as m %}
+            {{ m.initSessionIcoCollection('','collection_myIcons') }}
+            {% set myIcons=app.session.get('collection_myIcons',{}) %}
             {% if myIcons.library|default("")!="" %}
                 {{ myIcons.library|raw }}
                 permet d'inclure le fichier css de définition...

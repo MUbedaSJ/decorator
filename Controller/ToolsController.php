@@ -1,9 +1,9 @@
 <?php
 
-namespace Amu\Bundle\DecoratorBundle\Controller;
+namespace MUbedaSJ\Bundle\DecoratorBundle\Controller;
 
 use App\Kernel;
-use Amu\Bundle\DecoratorBundle\Service\Decorator;
+use MUbedaSJ\Bundle\DecoratorBundle\Service\Decorator;
 use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;

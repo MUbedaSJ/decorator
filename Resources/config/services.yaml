@@ -1,6 +1,6 @@
 services:
 
-     Amu\Bundle\DecoratorBundle\Service\Decorator:
+  MUbedaSJ\Bundle\DecoratorBundle\Service\Decorator:
         autowire: true
         autoconfigure: true
         public: true
@@ -9,11 +9,11 @@ services:
             - '@logger'
             - '@twig'
         tags:
-            - { name: monolog.logger, handler: amu  }
+            - { name: monolog.logger, handler: mu  }
 
-     decorator_service: '@Amu\Bundle\DecoratorBundle\Service\Decorator'
+     decorator_service: '@MUbedaSJ\Bundle\DecoratorBundle\Service\Decorator'
 
-     Amu\Bundle\DecoratorBundle\Twig\JsonExtension:
+     MUbedaSJ\Bundle\DecoratorBundle\Twig\JsonExtension:
         autowire: true
         autoconfigure: true
         public: true
@@ -22,10 +22,10 @@ services:
         tags:
             - { name: "twig.extension" }
 
-     twig.json_decode: '@Amu\Bundle\DecoratorBundle\Twig\JsonExtension'
+     twig.json_decode: '@MUbedaSJ\Bundle\DecoratorBundle\Twig\JsonExtension'
 
 
-     Amu\Bundle\DecoratorBundle\Twig\MyCustomTwigExtRuntime:
+     MUbedaSJ\Bundle\DecoratorBundle\Twig\MyCustomTwigExtRuntime:
         autowire: true
         autoconfigure: true
         public: true
@@ -34,14 +34,14 @@ services:
         tags:
             - { name: "twig.runtime" }
 
-     twig.json_decode_runtime: '@Amu\Bundle\DecoratorBundle\Twig\MyCustomTwigExtRuntime'
+     twig.json_decode_runtime: '@MUbedaSJ\Bundle\DecoratorBundle\Twig\MyCustomTwigExtRuntime'
 
     # BEGIN new Maker tools service définition...
     Symfony\Bundle\MakerBundle\Doctrine\DoctrineHelper: '@maker.doctrine_helper'
     Symfony\Bundle\MakerBundle\FileManager: '@maker.file_manager'
 
     maker.maker.make_translate:
-        class: Amu\Bundle\DecoratorBundle\Maker\MakeTranslate
+        class: MUbedaSJ\Bundle\DecoratorBundle\Maker\MakeTranslate
         arguments:
             - '@maker.file_manager'
             - '@maker.doctrine_helper'
@@ -50,7 +50,7 @@ services:
         tags: [ "maker.command" ]
 
     maker.maker.make_decoration:
-          class: Amu\Bundle\DecoratorBundle\Maker\MakeDecoration
+          class: MUbedaSJ\Bundle\DecoratorBundle\Maker\MakeDecoration
           arguments:
               - '@maker.file_manager'
               - '@maker.doctrine_helper'
@@ -63,6 +63,6 @@ services:
 #        autowire: true
 #        autoconfigure: true
 #        public: true
-#        class: Amu\Bundle\DecoratorBundle\Controller\ToolsController
+#        class: MUbedaSJ\Bundle\DecoratorBundle\Controller\ToolsController
 #        arguments:
 #            - $ws: '@decorator.ws_service'

@@ -1,6 +1,6 @@
 <?php
 
-namespace Amu\Bundle\DecoratorBundle;
+namespace MUbedaSJ\Bundle\DecoratorBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
