@@ -1,5 +1,5 @@
 {
-    "name": "MUbedaSJ/decorator",
+    "name": "mubedasj/decorator",
     "type": "symfony-bundle",
     "description": "DecoratorBundle is a crud decoration library/tools help quicly make beautifull CRUD (using macros and services), this bundle for Symfony 2, 3 and 4",
     "keywords": ["decorator","form","crud","datatable","bs","jquery"],
