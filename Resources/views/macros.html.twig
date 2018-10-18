@@ -528,6 +528,7 @@ crudMacrosLastModifs.html.twig
         {% if title|default("")!="" %}
             {{ crudMacro.addTitle(title) }}
         {% endif %}
+        {{ crudMacro.addFlashBagViewer }}
         {{ crudMacro.addLegendeForm() }}
         <br>
         {{ render(controller('DecoratorBundle:Tools:formGenerator', { 'FQCN': FQCN, 'params': params, 'data': entity, 'url':app.request.requestUri, 'debug':debug  } ))|raw   }}

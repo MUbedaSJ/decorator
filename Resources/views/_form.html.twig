@@ -17,47 +17,49 @@
     </div>
 {% endif %}
 {% for v in edit_form %}
-    <div class="form-group container-fluid {{ ('hidden' in v.vars.block_prefixes)?"hidden":"" }}">
+    {% if "submit" not in v.vars.block_prefixes %}
+        <div class="form-group container-fluid {{ ('hidden' in v.vars.block_prefixes)?"hidden":"" }}">
 
-        {% set label=v.vars.label|default(v.vars.name|humanize) %}
-        {% if (arItems[v.vars.name] is defined) and (arItems[v.vars.name].label|default("")!="") %}
-            {% set label=arItems[v.vars.name].label %}
-            {% set curItem=arItems[v.vars.name] %}
-        {% endif %}
-
-        {#{% if globals.translation|default(false)  %}#}
-        {#{% set label= (cfg_entity.name~"."~v.vars.name) |trans({ 'message': v.vars.name, 'id':v.vars.name, 'domaine': cfg_entity.name, 'locale':'fr' })%}#}
-        {#{% endif %}#}
-
-        <label class="col-sm-2 control-label {{ v.vars.required|default(false)?"required text-danger":"" }}" for="{{ v.vars.id }}">{{ label|raw }}
-            {% if (curItem.tips|default("")!="") %}<span class="bt-popover {{ curItem.icon|default(options.popover.icon|default(globals.popover.icon|default('glyphicon glyphicon-info-sign')))|raw }}" data-placement="{{ curItem.placement|default(options.popover.placement|default(globals.popover.placement|default('bottom')))|raw }}" data-html="true" data-trigger="{{ curItem.trigger|default(options.popover.trigger|default(globals.popover.trigger|default('hover')))|raw }}" data-toggle="popover" data-template="{{ curItem.template|default(options.popover.template|default(globals.popover.template))|raw|replace({'"':'""'}) }}" data-title="{{ curItem.label|default(varName|default(aItem.value|default("Informations")))|raw }}" data-content="{{ curItem.tips|default("")|replace({"'":"''"})|nl2br|raw }}"></span>{% endif %}
-        </label>
-        <div class="col-sm-10">
-            {% if v.vars.prototype is defined %}
-                {{ crudMacro.addTabForms(v.vars.prototype,v,v.vars.name) }}
-            {% else %}
-                {{ form_errors(v) }}
-                {% if not v.vars.valid %}
-                    <ul>
-                        {# Loop through every form item #}
-                        {% for child in v.children %}
-                            {# Display the errors of the form item #}
-                            {%for error in v.vars.errors%}
-                                <li>{{error.message}}</li>
-                            {%endfor%}
-                        {%endfor%}
-                    </ul>
-                {%endif%}
-
-                {{ form_widget(v) }}
+            {% set label=v.vars.label|default(v.vars.name|humanize) %}
+            {% if (arItems[v.vars.name] is defined) and (arItems[v.vars.name].label|default("")!="") %}
+                {% set label=arItems[v.vars.name].label %}
+                {% set curItem=arItems[v.vars.name] %}
             {% endif %}
+
+            {#{% if globals.translation|default(false)  %}#}
+            {#{% set label= (cfg_entity.name~"."~v.vars.name) |trans({ 'message': v.vars.name, 'id':v.vars.name, 'domaine': cfg_entity.name, 'locale':'fr' })%}#}
+            {#{% endif %}#}
+
+            <label class="col-sm-2 control-label {{ v.vars.required|default(false)?"required text-danger":"" }}" for="{{ v.vars.id }}">{{ label|raw }}
+                {% if (curItem.tips|default("")!="") %}<span class="bt-popover {{ curItem.icon|default(options.popover.icon|default(globals.popover.icon|default('glyphicon glyphicon-info-sign')))|raw }}" data-placement="{{ curItem.placement|default(options.popover.placement|default(globals.popover.placement|default('bottom')))|raw }}" data-html="true" data-trigger="{{ curItem.trigger|default(options.popover.trigger|default(globals.popover.trigger|default('hover')))|raw }}" data-toggle="popover" data-template="{{ curItem.template|default(options.popover.template|default(globals.popover.template))|raw|replace({'"':'""'}) }}" data-title="{{ curItem.label|default(varName|default(aItem.value|default("Informations")))|raw }}" data-content="{{ curItem.tips|default("")|replace({"'":"''"})|nl2br|raw }}"></span>{% endif %}
+            </label>
+            <div class="col-sm-10">
+                {% if v.vars.prototype is defined %}
+                    {{ crudMacro.addTabForms(v.vars.prototype,v,v.vars.name) }}
+                {% else %}
+                    {#
+                    {{ form_errors(v) }}
+                    {% if not v.vars.valid %}
+                        <ul>
+                            {% for child in v.children %}
+                                {%for error in v.vars.errors%}
+                                    <li>{{error.message}}</li>
+                                {%endfor%}
+                            {%endfor%}
+                        </ul>
+                    {%endif%}
+                    #}
+                    {{ form_widget(v) }}
+                {% endif %}
+            </div>
         </div>
-    </div>
+    {% endif %}
+
 {% endfor %}
 
-{{ form_rest(edit_form) }}
-
-<div class="pull-bottom">
+<span class="hidden" style="display: none;">{{ form_rest(edit_form) }}</span>
+<br>
+<div class="pull-bottom well-sm">
     <button type="submit"  class="btn btn-{{ btSize  }} btn-success pull-right" title="Enregistrer les modifications"><span class="glyphicon glyphicon-ok"></span> Valider</button>
     {#{% if back %}#}
     <a href="{{ path(urlBase~'_index') }}" class="btn btn-{{ btSize  }} btn-danger pull-left" title="Retour à la liste..."><span class="glyphicon glyphicon-remove"></span> Annuler</a>
@@ -117,6 +119,7 @@
                     {% endif %}
 
                     {% if a.type|default("") in ["button","submit"] %}
+                        {#<input type="{{ a.type }}" {% if (onclick!='') %} onclick="{{ onclick|raw }}" {% endif %} class="{{ a.class|default("") }}" {% if a.title is defined and a.title!='' %} title="{{ a.title }}" {% endif %} id="{{ a.id|default("") }}" name="{{ a.name|default("") }}" value=" {{ a.label|default('') }}" >#}
                         <button type="{{ a.type }}" {% if (onclick!='') %} onclick="{{ onclick|raw }}" {% endif %} class="{{ a.class|default("") }}" {% if a.title is defined and a.title!='' %} title="{{ a.title }}" {% endif %} id="{{ a.id|default("") }}" name="{{ a.name|default("") }}" /> {{ a.label|default('') }}</button>
                     {% else %}
                         <a {% if (onclick!='') %} onclick="{{ onclick|raw }}" {% endif %}{% if (a.path is defined) and (a.path!='') %} href="{{ path(a.path,paramsOK) }}" target="{{ a.target|default("") }}" {%endif%}><span class="btn btn-{{ btSize }}  {{ a.class|default("") }}" {% if a.title is defined and a.title!='' %} title="{{ a.title }}" {% endif %}> {{ a.label|default('') }}</span></a>

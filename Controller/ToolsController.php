@@ -151,7 +151,7 @@ class ToolsController extends Controller
         }
 
         /** @var Form $form */
-        $form=$this->get('decorator_service')->generateFormView($url,$arItems,$data);
+        $form=$this->get('decorator_service')->generateFormView($url,$arItems,$data,$arActions);
         $form->handleRequest($request);
 
         //$this->get('validate_request_listener')->onKernelRequest()

@@ -9,11 +9,13 @@ use FOS\CKEditorBundle\Form\Type\CKEditorType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Bridge\Monolog\Logger;
+use Symfony\Component\Form\Extension\Core\Type\ButtonType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilder;
@@ -122,11 +124,14 @@ class Decorator
      * @return FormView
      * @throws \Exception
      */
-    public function generateFormView($url,$arItems,$data)
+    public function generateFormView($url,$arItems,$data,$arActions)
     {
         $classReflector = new \ReflectionObject($data);
         $entityName= strtolower($classReflector->getShortName());
         $dataClass= $classReflector->getName();
+
+        $blockName=strtolower(str_replace("\\Entity\\","_",$dataClass));
+
         //$formType=str_replace("Entity","Form",$FQCN);
 
         $useTranslator= $this->container->getParameter('decorator.use_translation');
@@ -137,13 +142,13 @@ class Decorator
             'allow_extra_fields'=>true,
             'error_bubbling'=>true,
             'data_class'=> $dataClass,
-            'block_name'=> $entityName, //array('form',"$entity","_$entity")
+            'block_name'=> $blockName,
 //            'compound' => true,
 //            'inherit_data' => true,
         );
 
 
-        $builder =  $this->container->get('form.factory')->createNamed($entityName,FormType::class, $data, $arOptions);
+        $builder =  $this->container->get('form.factory')->createNamed($blockName,FormType::class, $data, $arOptions);
         $arData=$this->dismount($data);
 
         foreach ($arItems as $aItem){
@@ -183,6 +188,11 @@ class Decorator
                     "method" => "POST",
                     'mapped'=>true,
                     'property_path'=>$name,
+//                    'id'=>$blockName."_".$name,
+//                    'unique_block_prefix'=>"_".$blockName."_".$name,
+//                    'cache_key'=>"_".$blockName."_".$name,
+//                    'full_name'=>$blockName."[$name]",
+
                     //                'required'=>false,
 
                     //'translation_domain'=>$entityName, // global on parent forms
@@ -244,7 +254,7 @@ class Decorator
                             $type = DateTimeType::class;
                             $arAttrs['compound'] = true;
                             $arAttrs['date_widget']='single_text';
-                            $arAttrs['format']='d/m/Y H:i:s';
+                            $arAttrs['format']="d/m/Y H:i:s";
                             $arAttrs['time_widget']='single_text';
                             if($ro){
                                 //$arAttrs['attr']['disabled'] = true;
@@ -383,8 +393,41 @@ class Decorator
 
             }
 
+
+
         }
 
+        if(count($arActions)){
+            foreach ($arActions as $key=>$aAction){
+                $arAttrs=[];
+
+                $name=isset($aAction['name'])?$aAction['name']:$key;
+                if($name!=""){
+                    ///  "attr", "auto_initialize", "block_name", "disabled", "label", "label_format", "translation_domain", "validation_groups"
+                    $arAttrs= array(
+                        'disabled'=>false,
+                        'label'=>isset($aAction['label'])?$aAction['label']:"",
+                        'attr'=>[]
+                    );
+
+                    $type=ButtonType::class;
+                    if(isset($aAction['type'])){
+                        if($aAction['type']=='submit'){
+                            $type=SubmitType::class;
+                        }
+                    }
+
+                    foreach (array('class','name', 'id','onclick','title') as $oneAttr){
+                        if(isset($aAction[$oneAttr])){
+                            $arAttrs['attr'][$oneAttr] = $aAction[$oneAttr];
+                        }
+                    }
+
+                    $builder->add($name,$type,$arAttrs);
+
+                }
+            }
+        }
 
         return $builder;
 
